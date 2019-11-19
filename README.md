@@ -118,7 +118,7 @@ When hitting `/invalid` it will return the following:
 ```json
 {
   "error": "Internal Server Error",
-  "message": "This was not supposed to happen.",
+  "message": "[Error] This was not supposed to happen.",
   "statusCode": 500,
   "id": 123,
   "stack": ["..."]
