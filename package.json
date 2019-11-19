@@ -36,7 +36,6 @@
     "postpublish": "git push origin && git push origin -f --tags"
   },
   "dependencies": {
-    "fast-json-stringify": "^1.15.6",
     "fastify-plugin": "^1.6.0",
     "http-errors": "^1.7.3",
     "http-status-codes": "^1.4.0",
@@ -45,7 +44,6 @@
   "devDependencies": {
     "@cowtech/tslint-config": "^5.13.0",
     "@types/http-errors": "^1.6.2",
-    "@types/http-status-codes": "^1.2.0",
     "@types/jest": "^24.0.23",
     "@types/node": "^12.12.8",
     "@types/statuses": "^1.5.0",
