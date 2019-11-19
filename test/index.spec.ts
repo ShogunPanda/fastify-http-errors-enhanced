@@ -1,8 +1,8 @@
 import fastify, { FastifyInstance, RegisterOptions } from 'fastify'
 import { IncomingMessage, Server, ServerResponse } from 'http'
-import { BadGateway as DefaultBadGateway } from 'http-errors'
+import createError, { BadGateway } from 'http-errors'
 import { BAD_GATEWAY, INTERNAL_SERVER_ERROR, NOT_FOUND } from 'http-status-codes'
-import fastifyerrorProperties, { BadGateway, handleErrors, NotFound } from '../src'
+import fastifyerrorProperties, { handleErrors } from '../src'
 
 type Callback = () => void
 
@@ -11,13 +11,15 @@ let server: FastifyInstance | null
 function defaultRoutes(instance: FastifyInstance, _options: unknown, done: Callback): void {
   instance.get('/bad-gateway', {
     async handler(): Promise<void> {
-      throw new DefaultBadGateway('This was the error message.')
+      throw new BadGateway('This was the error message.')
     }
   })
 
   instance.get('/headers', {
     async handler(): Promise<void> {
-      const error = new NotFound('This was the error message.', { headers: { 'X-Custom-Header': 'Custom-Value' } })
+      const error = createError(NOT_FOUND, 'This was the error message.', {
+        headers: { 'X-Custom-Header': 'Custom-Value' }
+      })
 
       throw error
     }
@@ -25,7 +27,7 @@ function defaultRoutes(instance: FastifyInstance, _options: unknown, done: Callb
 
   instance.get('/properties', {
     async handler(): Promise<void> {
-      const error = new BadGateway('This was the error message.', { id: 1 })
+      const error = createError(BAD_GATEWAY, 'This was the error message.', { id: 1 })
 
       throw error
     }
@@ -42,7 +44,7 @@ function defaultRoutes(instance: FastifyInstance, _options: unknown, done: Callb
 
   instance.get('/weird-code', {
     async handler(): Promise<void> {
-      const error = new DefaultBadGateway('This was the error message.')
+      const error = new BadGateway('This was the error message.')
       error.statusCode = 10
 
       throw error
@@ -237,35 +239,5 @@ describe('Using standalone error handling', function(): void {
         expect.stringMatching(/Object\.handler \(\$ROOT\/test\/index\.spec\.ts:\d+:\d+\)/)
       ])
     })
-  })
-})
-
-describe('Extending http-errors named constructors', function(): void {
-  it('should support (message, properties) syntax', function(): void {
-    const error404byName = new NotFound('message', { id: 1 })
-    expect(error404byName).toBeInstanceOf(Error)
-    expect(error404byName.statusCode).toEqual(404)
-    expect(error404byName.message).toEqual('message')
-    expect(error404byName.id).toEqual(1)
-
-    const error502byName = new BadGateway('message', { id: 1 })
-    expect(error502byName).toBeInstanceOf(Error)
-    expect(error502byName.statusCode).toEqual(502)
-    expect(error502byName.message).toEqual('message')
-    expect(error502byName.id).toEqual(1)
-  })
-
-  it('should support (message, properties) syntax', function(): void {
-    const error404byName = new NotFound({ id: 1 })
-    expect(error404byName).toBeInstanceOf(Error)
-    expect(error404byName.statusCode).toEqual(404)
-    expect(error404byName.message).toEqual('Not Found')
-    expect(error404byName.id).toEqual(1)
-
-    const error502byName = new BadGateway({ id: 1 })
-    expect(error502byName).toBeInstanceOf(Error)
-    expect(error502byName.statusCode).toEqual(502)
-    expect(error502byName.message).toEqual('Bad Gateway')
-    expect(error502byName.id).toEqual(1)
   })
 })

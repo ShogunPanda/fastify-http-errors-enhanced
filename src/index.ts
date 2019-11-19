@@ -6,7 +6,6 @@ import { INTERNAL_SERVER_ERROR } from 'http-status-codes'
 import statuses from 'statuses'
 import { addAdditionalProperties, GenericObject, NodeError, serializeError } from './properties'
 
-export * from './errors'
 export { addAdditionalProperties, GenericObject } from './properties'
 
 export interface FastifyDecoratedRequest extends FastifyRequest {
