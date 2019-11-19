@@ -1,0 +1,63 @@
+{
+  "name": "fastify-errors-properties",
+  "version": "0.1.0",
+  "description": "Fastify plugin to support http-errors additional properties.",
+  "homepage": "https://sw.cowtech.it/fastify-errors-properties",
+  "repository": "github:ShogunPanda/fastify-errors-properties",
+  "keywords": [
+    "fastify",
+    "fastify-plugin",
+    "http-errors"
+  ],
+  "bugs": {
+    "url": "https://github.com/ShogunPanda/fastify-errors-properties/issues"
+  },
+  "author": "Shogun <shogun@cowtech.it>",
+  "license": "ISC",
+  "private": false,
+  "files": [
+    "lib",
+    "types",
+    "CHANGELOG.md",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "main": "lib/index.js",
+  "typings": "types/index.d.ts",
+  "types": "types/index.d.ts",
+  "scripts": {
+    "lint": "tslint --project tsconfig.test.json -t stylish src/*.ts test/*.ts",
+    "test": "jest test --coverage --coverageReporters=html --coverageReporters=text",
+    "ci": "jest test --coverage --ci --coverageReporters=json",
+    "sanity": "yarn lint && yarn test",
+    "prebuild": "rm -rf lib/* types/* && yarn lint",
+    "build": "tsc -p .",
+    "prepublishOnly": "yarn sanity",
+    "postpublish": "git push origin && git push origin -f --tags"
+  },
+  "dependencies": {
+    "fast-json-stringify": "^1.15.6",
+    "fastify-plugin": "^1.6.0",
+    "http-errors": "^1.7.3",
+    "http-status-codes": "^1.4.0",
+    "statuses": "^1.5.0"
+  },
+  "devDependencies": {
+    "@cowtech/tslint-config": "^5.13.0",
+    "@types/http-errors": "^1.6.2",
+    "@types/http-status-codes": "^1.2.0",
+    "@types/jest": "^24.0.23",
+    "@types/node": "^12.12.8",
+    "@types/statuses": "^1.5.0",
+    "fastify": "^2.10.0",
+    "jest": "^24.9.0",
+    "prettier": "^1.19.1",
+    "ts-jest": "^24.1.0",
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.2"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "watchman": false
+  }
+}
