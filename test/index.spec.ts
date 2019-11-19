@@ -1,7 +1,8 @@
+import Ajv from 'ajv'
 import fastify, { FastifyInstance, RegisterOptions } from 'fastify'
 import { IncomingMessage, Server, ServerResponse } from 'http'
 import createError, { BadGateway } from 'http-errors'
-import { BAD_GATEWAY, INTERNAL_SERVER_ERROR, NOT_FOUND } from 'http-status-codes'
+import { BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND } from 'http-status-codes'
 import fastifyerrorProperties, { handleErrors } from '../src'
 
 type Callback = () => void
@@ -9,6 +10,16 @@ type Callback = () => void
 let server: FastifyInstance | null
 
 function defaultRoutes(instance: FastifyInstance, _options: unknown, done: Callback): void {
+  const ajv = new Ajv({
+    removeAdditional: false,
+    useDefaults: true,
+    coerceTypes: true,
+    allErrors: true,
+    nullable: true
+  })
+
+  instance.setSchemaCompiler((schema: object) => ajv.compile(schema))
+
   instance.get('/bad-gateway', {
     async handler(): Promise<void> {
       throw new BadGateway('This was the error message.')
@@ -60,6 +71,51 @@ function defaultRoutes(instance: FastifyInstance, _options: unknown, done: Callb
     }
   })
 
+  instance.post('/validated/:id', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'number'
+          }
+        },
+        additionalProperties: false
+      },
+      querystring: {
+        type: 'object',
+        properties: {
+          val: {
+            type: 'string',
+            pattern: 'ab{2}c'
+          }
+        },
+        additionalProperties: false
+      },
+      headers: {
+        type: 'object',
+        properties: {
+          'x-header': {
+            type: 'string',
+            pattern: '\\d+'
+          }
+        },
+        additionalProperties: true,
+        required: ['x-header']
+      },
+      body: {
+        type: 'array',
+        items: {
+          type: 'number',
+          minimum: 12
+        }
+      }
+    },
+    async handler(): Promise<string> {
+      return 'OK'
+    }
+  })
+
   done()
 }
 
@@ -81,163 +137,295 @@ async function buildServer(
   return server
 }
 
-describe('Handling http-errors', function(): void {
-  beforeEach(buildServer)
-  afterEach(() => server!.close())
+describe('Plugin', function(): void {
+  describe('Handling http-errors', function(): void {
+    beforeEach(buildServer)
+    afterEach(() => server!.close())
 
-  it('should correctly return client errors', async function(): Promise<void> {
-    const response = await server!.inject({ method: 'GET', url: '/not-found' })
+    it('should correctly return client errors', async function(): Promise<void> {
+      const response = await server!.inject({ method: 'GET', url: '/not-found' })
 
-    expect(response.statusCode).toEqual(NOT_FOUND)
-    expect(response.headers['content-type']).toEqual('application/json; charset=utf-8')
-    expect(JSON.parse(response.payload)).toEqual({
-      error: 'Not Found',
-      message: 'Not found.',
-      statusCode: NOT_FOUND
+      expect(response.statusCode).toEqual(NOT_FOUND)
+      expect(response.headers['content-type']).toEqual('application/json; charset=utf-8')
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Not Found',
+        message: 'Not found.',
+        statusCode: NOT_FOUND
+      })
+    })
+
+    it('should correctly return server errors', async function(): Promise<void> {
+      const response = await server!.inject({ method: 'GET', url: '/bad-gateway' })
+
+      expect(response.statusCode).toEqual(BAD_GATEWAY)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Bad Gateway',
+        message: 'This was the error message.',
+        statusCode: BAD_GATEWAY
+      })
+    })
+
+    it('should correctly return additional headers', async function(): Promise<void> {
+      const response = await server!.inject({ method: 'GET', url: '/headers' })
+
+      expect(response.statusCode).toEqual(NOT_FOUND)
+      expect(response.headers).toMatchObject({ 'x-custom-header': 'Custom-Value' })
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Not Found',
+        message: 'This was the error message.',
+        statusCode: NOT_FOUND
+      })
+    })
+
+    it('should correctly return additional properties', async function(): Promise<void> {
+      const response = await server!.inject({ method: 'GET', url: '/properties' })
+
+      expect(response.statusCode).toEqual(BAD_GATEWAY)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Bad Gateway',
+        message: 'This was the error message.',
+        statusCode: BAD_GATEWAY,
+        id: 1
+      })
+    })
+
+    it('should default status code to 500 if outside HTTP range', async function(): Promise<void> {
+      const response = await server!.inject({ method: 'GET', url: '/weird-code' })
+
+      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Internal Server Error',
+        message: 'This was the error message.',
+        statusCode: INTERNAL_SERVER_ERROR
+      })
+    })
+
+    it('should have good defaults if the error is weirdly manipulated', async function(): Promise<void> {
+      await buildServer({ hideUnhandledErrors: false })
+      const response = await server!.inject({ method: 'GET', url: '/weird-error' })
+
+      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Internal Server Error',
+        message: '[Error] This was the error message.',
+        statusCode: INTERNAL_SERVER_ERROR,
+        stack: []
+      })
     })
   })
 
-  it('should correctly return server errors', async function(): Promise<void> {
-    const response = await server!.inject({ method: 'GET', url: '/bad-gateway' })
+  describe('Handling generic errors', function(): void {
+    beforeEach(buildServer)
+    afterEach(() => server!.close())
 
-    expect(response.statusCode).toEqual(BAD_GATEWAY)
-    expect(JSON.parse(response.payload)).toEqual({
-      error: 'Bad Gateway',
-      message: 'This was the error message.',
-      statusCode: BAD_GATEWAY
+    it('should correctly return generic errors by wrapping them in a 500 http-error, including headers and properties', async function(): Promise<
+      void
+    > {
+      const response = await server!.inject({ method: 'GET', url: '/error' })
+
+      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(response.headers).toMatchObject({ 'x-custom-header': 'Custom-Value' })
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Internal Server Error',
+        message: '[Error] This was a generic message.',
+        statusCode: INTERNAL_SERVER_ERROR,
+        id: 1,
+        stack: expect.arrayContaining([
+          expect.stringMatching(/Object\.handler \(\$ROOT\/test\/index\.spec\.ts:\d+:\d+\)/)
+        ])
+      })
+    })
+
+    it('should correctly return server errors with masking explicility enabled', async function(): Promise<void> {
+      await buildServer({ hideUnhandledErrors: true })
+
+      const response = await server!.inject({ method: 'GET', url: '/error' })
+
+      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Internal Server Error',
+        message: 'An error occurred trying to process your request.',
+        statusCode: INTERNAL_SERVER_ERROR
+      })
+    })
+
+    it('should correctly return server errors with masking explicility disabled', async function(): Promise<void> {
+      const response = await server!.inject({ method: 'GET', url: '/error' })
+
+      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(response.headers).toMatchObject({ 'x-custom-header': 'Custom-Value' })
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Internal Server Error',
+        message: '[Error] This was a generic message.',
+        statusCode: INTERNAL_SERVER_ERROR,
+        id: 1,
+        stack: expect.arrayContaining([
+          expect.stringMatching(/Object\.handler \(\$ROOT\/test\/index\.spec\.ts:\d+:\d+\)/)
+        ])
+      })
     })
   })
 
-  it('should correctly return additional headers', async function(): Promise<void> {
-    const response = await server!.inject({ method: 'GET', url: '/headers' })
+  describe('Handling validation errors', function(): void {
+    beforeEach(buildServer)
+    afterEach(() => server!.close())
 
-    expect(response.statusCode).toEqual(NOT_FOUND)
-    expect(response.headers).toMatchObject({ 'x-custom-header': 'Custom-Value' })
-    expect(JSON.parse(response.payload)).toEqual({
-      error: 'Not Found',
-      message: 'This was the error message.',
-      statusCode: NOT_FOUND
+    it('should validate params', async function(): Promise<void> {
+      const response = await server!.inject({
+        method: 'POST',
+        url: '/validated/abc',
+        headers: { 'x-header': '123' },
+        payload: []
+      })
+
+      expect(response.statusCode).toEqual(BAD_REQUEST)
+      expect(JSON.parse(response.payload)).toEqual({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'One or more validations failed trying to process your request.',
+        failedValidations: { params: { id: 'must be a valid number' } }
+      })
+    })
+
+    it('should validate querystring', async function(): Promise<void> {
+      const response = await server!.inject({
+        method: 'POST',
+        url: '/validated/123',
+        query: { val: 13, val2: 'asd' },
+        payload: []
+      })
+
+      expect(response.statusCode).toEqual(BAD_REQUEST)
+      expect(JSON.parse(response.payload)).toEqual({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'One or more validations failed trying to process your request.',
+        failedValidations: { query: { val: 'must match pattern "ab{2}c"', val2: 'is not a valid property' } }
+      })
+    })
+
+    it('should validate headers', async function(): Promise<void> {
+      const response = await server!.inject({ method: 'POST', url: '/validated/123', payload: [] })
+
+      expect(response.statusCode).toEqual(BAD_REQUEST)
+      expect(JSON.parse(response.payload)).toEqual({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'One or more validations failed trying to process your request.',
+        failedValidations: { headers: { 'x-header': 'must be present' } }
+      })
+    })
+
+    it('should validate body', async function(): Promise<void> {
+      const response = await server!.inject({ method: 'POST', url: '/validated/123' })
+
+      expect(response.statusCode).toEqual(BAD_REQUEST)
+      expect(JSON.parse(response.payload)).toEqual({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'One or more validations failed trying to process your request.',
+        failedValidations: { body: { $root: 'must be an array' } }
+      })
+    })
+
+    it('should not convert validation if option is disabled', async function(): Promise<void> {
+      await buildServer({ convertValidationErrors: false })
+
+      const response = await server!.inject({
+        method: 'POST',
+        url: '/validated/abc',
+        headers: { 'x-header': '123' },
+        payload: []
+      })
+
+      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Internal Server Error',
+        message: '[Error] params.id should be number',
+        statusCode: INTERNAL_SERVER_ERROR,
+        stack: expect.arrayContaining([
+          expect.stringMatching(/validate \(\$ROOT\/node_modules\/fastify\/.+:\d+:\d+\)/)
+        ]),
+        validation: expect.arrayContaining([
+          expect.objectContaining({
+            dataPath: '.id',
+            keyword: 'type',
+            message: 'should be number',
+            params: {
+              type: 'number'
+            },
+            schemaPath: '#/properties/id/type'
+          })
+        ])
+      })
     })
   })
 
-  it('should correctly return additional properties', async function(): Promise<void> {
-    const response = await server!.inject({ method: 'GET', url: '/properties' })
+  describe('Using standalone error handling', function(): void {
+    let standaloneServer: FastifyInstance
 
-    expect(response.statusCode).toEqual(BAD_GATEWAY)
-    expect(JSON.parse(response.payload)).toEqual({
-      error: 'Bad Gateway',
-      message: 'This was the error message.',
-      statusCode: BAD_GATEWAY,
-      id: 1
-    })
-  })
+    beforeEach(async function(): Promise<void> {
+      standaloneServer = fastify()
 
-  it('should default status code to 500 if outside HTTP range', async function(): Promise<void> {
-    const response = await server!.inject({ method: 'GET', url: '/weird-code' })
+      standaloneServer.setErrorHandler(handleErrors)
+      standaloneServer.get('/error/:id', {
+        schema: {
+          params: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'number'
+              }
+            }
+          }
+        },
+        async handler(): Promise<void> {
+          throw new Error('This was a generic message.')
+        }
+      })
 
-    expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
-    expect(JSON.parse(response.payload)).toEqual({
-      error: 'Internal Server Error',
-      message: 'This was the error message.',
-      statusCode: INTERNAL_SERVER_ERROR
-    })
-  })
-
-  it('should have good defaults if the error is weirdly manipulated', async function(): Promise<void> {
-    await buildServer({ hideUnhandledErrors: false })
-    const response = await server!.inject({ method: 'GET', url: '/weird-error' })
-
-    expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
-    expect(JSON.parse(response.payload)).toEqual({
-      error: 'Internal Server Error',
-      message: '[Error] This was the error message.',
-      statusCode: INTERNAL_SERVER_ERROR,
-      stack: []
-    })
-  })
-})
-
-describe('Handling generic errors', function(): void {
-  beforeEach(buildServer)
-  afterEach(() => server!.close())
-
-  it('should correctly return generic errors by wrapping them in a 500 http-error, including headers and properties', async function(): Promise<
-    void
-  > {
-    const response = await server!.inject({ method: 'GET', url: '/error' })
-
-    expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
-    expect(response.headers).toMatchObject({ 'x-custom-header': 'Custom-Value' })
-    expect(JSON.parse(response.payload)).toEqual({
-      error: 'Internal Server Error',
-      message: '[Error] This was a generic message.',
-      statusCode: INTERNAL_SERVER_ERROR,
-      id: 1,
-      stack: expect.arrayContaining([
-        expect.stringMatching(/Object\.handler \(\$ROOT\/test\/index\.spec\.ts:\d+:\d+\)/)
-      ])
-    })
-  })
-
-  it('should correctly return server errors with masking explicility enabled', async function(): Promise<void> {
-    await buildServer({ hideUnhandledErrors: true })
-
-    const response = await server!.inject({ method: 'GET', url: '/error' })
-
-    expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
-    expect(JSON.parse(response.payload)).toEqual({
-      error: 'Internal Server Error',
-      message: 'An error occurred trying to process your request.',
-      statusCode: INTERNAL_SERVER_ERROR
-    })
-  })
-
-  it('should correctly return server errors with masking explicility disabled', async function(): Promise<void> {
-    const response = await server!.inject({ method: 'GET', url: '/error' })
-
-    expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
-    expect(response.headers).toMatchObject({ 'x-custom-header': 'Custom-Value' })
-    expect(JSON.parse(response.payload)).toEqual({
-      error: 'Internal Server Error',
-      message: '[Error] This was a generic message.',
-      statusCode: INTERNAL_SERVER_ERROR,
-      id: 1,
-      stack: expect.arrayContaining([
-        expect.stringMatching(/Object\.handler \(\$ROOT\/test\/index\.spec\.ts:\d+:\d+\)/)
-      ])
-    })
-  })
-})
-
-describe('Using standalone error handling', function(): void {
-  let standaloneServer: FastifyInstance
-
-  beforeEach(async function(): Promise<void> {
-    standaloneServer = fastify()
-
-    standaloneServer.setErrorHandler(handleErrors)
-    standaloneServer.get('/error', {
-      async handler(): Promise<void> {
-        throw new Error('This was a generic message.')
-      }
+      await standaloneServer.listen(0)
     })
 
-    await standaloneServer.listen(0)
-  })
+    afterEach(() => standaloneServer.close())
 
-  afterEach(() => standaloneServer.close())
+    it('should not required the errorProperties by never masking server side errors ', async function(): Promise<void> {
+      const response = await standaloneServer.inject({ method: 'GET', url: '/error/123' })
 
-  it('should not required the errorProperties by never masking server side errors ', async function(): Promise<void> {
-    const response = await standaloneServer.inject({ method: 'GET', url: '/error' })
+      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Internal Server Error',
+        message: '[Error] This was a generic message.',
+        statusCode: INTERNAL_SERVER_ERROR,
+        stack: expect.arrayContaining([
+          expect.stringMatching(/Object\.handler \(\$ROOT\/test\/index\.spec\.ts:\d+:\d+\)/)
+        ])
+      })
+    })
 
-    expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
-    expect(JSON.parse(response.payload)).toEqual({
-      error: 'Internal Server Error',
-      message: '[Error] This was a generic message.',
-      statusCode: INTERNAL_SERVER_ERROR,
-      stack: expect.arrayContaining([
-        expect.stringMatching(/Object\.handler \(\$ROOT\/test\/index\.spec\.ts:\d+:\d+\)/)
-      ])
+    it('should not convert validation errors', async function(): Promise<void> {
+      const response = await standaloneServer.inject({ method: 'GET', url: '/error/abc' })
+
+      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Internal Server Error',
+        message: '[Error] params.id should be number',
+        statusCode: INTERNAL_SERVER_ERROR,
+        stack: expect.arrayContaining([
+          expect.stringMatching(/validate \(\$ROOT\/node_modules\/fastify\/.+:\d+:\d+\)/)
+        ]),
+        validation: expect.arrayContaining([
+          expect.objectContaining({
+            dataPath: '.id',
+            keyword: 'type',
+            message: 'should be number',
+            params: {
+              type: 'number'
+            },
+            schemaPath: '#/properties/id/type'
+          })
+        ])
+      })
     })
   })
 })

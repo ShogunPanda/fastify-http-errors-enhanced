@@ -39,14 +39,17 @@
     "fastify-plugin": "^1.6.0",
     "http-errors": "^1.7.3",
     "http-status-codes": "^1.4.0",
+    "lodash.get": "^4.4.2",
     "statuses": "^1.5.0"
   },
   "devDependencies": {
     "@cowtech/tslint-config": "^5.13.0",
     "@types/http-errors": "^1.6.2",
     "@types/jest": "^24.0.23",
+    "@types/lodash.get": "^4.4.6",
     "@types/node": "^12.12.8",
     "@types/statuses": "^1.5.0",
+    "ajv": "^6.10.2",
     "fastify": "^2.10.0",
     "jest": "^24.9.0",
     "prettier": "^1.19.1",

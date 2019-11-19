@@ -22,6 +22,7 @@ npm install fastify-errors-properties --save
 Register as a plugin, optional providing any of the following options:
 
 - `hideUnhandledErrors`: If to hide unhandled server errors or returning to the client including stack information. Default is to hide errors when `NODE_ENV` environment variable is `production`.
+- `convertValidationErrors`: Convert validation errors to a structured human readable object. Default is `true`.
 
 Once registered, the server will use the plugin handlers for all errors (basically, both `setErrorHandler` and `setNotFoundHandler` are called).
 
