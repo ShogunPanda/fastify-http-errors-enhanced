@@ -2,7 +2,7 @@
 
 [![Package Version](https://img.shields.io/npm/v/fastify-errors-properties.svg)](https://npm.im/fastify-errors-properties)
 [![Dependency Status](https://img.shields.io/david/ShogunPanda/fastify-errors-properties)](https://david-dm.org/ShogunPanda/fastify-errors-properties)
-[![Build](https://img.shields.io/circleci/build/gh/ShogunPanda/fastify-errors-properties?token=a721161f936393ce2826774e8b89c0785c06967b)](https://circleci.com/gh/ShogunPanda/fastify-errors-properties)
+[![Build](https://github.com/ShogunPanda/fastify-errors-properties/workflows/CI/badge.svg)](https://github.com/ShogunPanda/fastify-errors-properties/actions?query=workflow%3ACI)
 [![Code Coverage](https://img.shields.io/codecov/c/gh/ShogunPanda/fastify-errors-properties?token=d0ae1643f35c4c4f9714a357f796d05d)](https://codecov.io/gh/ShogunPanda/fastify-errors-properties)
 
 A error handling plugin for Fastify that enables additional properties in errors.
