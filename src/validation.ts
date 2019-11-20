@@ -85,11 +85,20 @@ export function convertValidationErrors(
     section = 'query'
   }
 
+  // For each error
   for (const e of validationErrors) {
-    // For each error
-    let baseKey = e.dataPath.substring(e.dataPath.startsWith('.') ? 1 : 0)
-    let key = baseKey
     let message = ''
+
+    // Normalize the key
+    let key = e.dataPath
+
+    if (key.startsWith('.')) {
+      key = key.substring(1)
+    }
+
+    if (key.startsWith('[') && key.endsWith(']')) {
+      key = key.substring(1, key.length - 1)
+    }
 
     // Depending on the type
     switch (e.keyword) {
@@ -159,10 +168,16 @@ export function convertValidationErrors(
     }
 
     // Find the property to add
-    let property = Array.from(new Set([baseKey, key].filter((p: string) => p)))
-      .join('.')
-      .replace(/\[(\d+)\]/g, '.$1')
+    let property = key
+      .replace(/\[(\d+)\]/g, '.$1') // Array path
+      .replace(/\[([^\]]+)\]/g, '.$1') // Object path
 
+    // Remove useless quotes
+    if (property.match(/(?:^['"])(?:[^\.]+)(?:['"]$)/)) {
+      property = property.substring(1, property.length - 1)
+    }
+
+    // Fix empty properties
     if (!property) {
       property = '$root'
     }

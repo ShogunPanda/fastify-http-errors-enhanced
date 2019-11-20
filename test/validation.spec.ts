@@ -2,7 +2,7 @@ import Ajv from 'ajv'
 import { ValidationResult } from 'fastify'
 import { convertValidationErrors, niceJoin } from '../src'
 
-describe.only('Validation', function(): void {
+describe('Validation', function(): void {
   it('should correctly parse validation errors', function(): void {
     const ajv = new Ajv({
       removeAdditional: false,
@@ -125,10 +125,16 @@ describe.only('Validation', function(): void {
         objectPath: {
           type: 'object',
           properties: {
-            abc: {
+            'x-abc': {
+              type: 'number'
+            },
+            cde: {
               type: 'number'
             }
           }
+        },
+        'needs-quotes': {
+          type: 'number'
         }
       },
       additionalProperties: false,
@@ -162,8 +168,10 @@ describe.only('Validation', function(): void {
       noMessage: true,
       arrayPath: ['abc'],
       objectPath: {
-        abc: 'abc'
-      }
+        'x-abc': 'abc',
+        cde: 'cde'
+      },
+      'needs-quotes': 'nq'
     }
 
     const expected = {
@@ -180,7 +188,8 @@ describe.only('Validation', function(): void {
         minItems: 'must be an array with at least 2 items',
         maxItems: 'must be an array with at most 2 items',
         'arrayPath.0': 'must be a valid number',
-        'objectPath.abc': 'must be a valid number',
+        "objectPath.'x-abc'": 'must be a valid number',
+        'objectPath.cde': 'must be a valid number',
         minimum: 'must be a number greater than or equal to 5',
         maximum: 'must be a number less than or equal to 5',
         number: 'must be a valid number',
@@ -195,7 +204,8 @@ describe.only('Validation', function(): void {
         response:
           'The response returned from the endpoint violates its specification for the HTTP status invalidResponse.',
         responseCode: 'This endpoint cannot respond with HTTP status invalidResponseCode.',
-        noMessage: 'must match format "noMessage" (format)'
+        noMessage: 'must match format "noMessage" (format)',
+        'needs-quotes': 'must be a valid number'
       }
     }
 
