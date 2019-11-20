@@ -1,3 +1,10 @@
+### 2019-11-20 / 0.3.0
+
+* chore: Include yarn.lock in repo.
+* chore: Minor CI fix.
+* chore: Switch to GitHub Actions.
+* fix: Improved validation handling.
+
 ### 2019-11-19 / 0.2.0
 
 * feat: Added validation errors handling.
