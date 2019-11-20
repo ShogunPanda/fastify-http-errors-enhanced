@@ -1,6 +1,6 @@
 {
   "name": "fastify-errors-properties",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Fastify plugin to support http-errors additional properties.",
   "homepage": "https://sw.cowtech.it/fastify-errors-properties",
   "repository": "github:ShogunPanda/fastify-errors-properties",
