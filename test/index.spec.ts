@@ -4,7 +4,7 @@ import { IncomingMessage, Server, ServerResponse } from 'http'
 import createError, { BadGateway } from 'http-errors'
 import { BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND, UNSUPPORTED_MEDIA_TYPE } from 'http-status-codes'
 import 'jest-additional-expectations'
-import fastifyerrorProperties, { handleErrors } from '../src'
+import fastifyErrorProperties, { handleErrors } from '../src'
 
 type Callback = () => void
 
@@ -131,7 +131,7 @@ async function buildServer(
 
   server = fastify()
 
-  server.register(fastifyerrorProperties, options)
+  server.register(fastifyErrorProperties, options)
   server.register(routes || defaultRoutes)
   await server.listen(0)
 
