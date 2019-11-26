@@ -328,7 +328,7 @@ describe('Plugin', function(): void {
 
       expect(response).toHaveHTTPStatus(BAD_REQUEST)
       expect(JSON.parse(response.payload)).toEqual({
-        statusCode: 400,
+        statusCode: BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
         failedValidations: { params: { id: 'must be a valid number' } }
@@ -345,7 +345,7 @@ describe('Plugin', function(): void {
 
       expect(response).toHaveHTTPStatus(BAD_REQUEST)
       expect(JSON.parse(response.payload)).toEqual({
-        statusCode: 400,
+        statusCode: BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
         failedValidations: { query: { val: 'must match pattern "ab{2}c"', val2: 'is not a valid property' } }
@@ -357,7 +357,7 @@ describe('Plugin', function(): void {
 
       expect(response).toHaveHTTPStatus(BAD_REQUEST)
       expect(JSON.parse(response.payload)).toEqual({
-        statusCode: 400,
+        statusCode: BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
         failedValidations: { headers: { 'x-header': 'must be present' } }
@@ -369,7 +369,7 @@ describe('Plugin', function(): void {
 
       expect(response).toHaveHTTPStatus(BAD_REQUEST)
       expect(JSON.parse(response.payload)).toEqual({
-        statusCode: 400,
+        statusCode: BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
         failedValidations: { body: { $root: 'must be an array' } }

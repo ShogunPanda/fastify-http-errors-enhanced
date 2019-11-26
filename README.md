@@ -23,6 +23,7 @@ Register as a plugin, optional providing any of the following options:
 
 - `hideUnhandledErrors`: If to hide unhandled server errors or returning to the client including stack information. Default is to hide errors when `NODE_ENV` environment variable is `production`.
 - `convertValidationErrors`: Convert validation errors to a structured human readable object. Default is `true`.
+- `convertResponsesValidationErrors`: Convert response validation errors to a structured human readable object. Default is to enable when `NODE_ENV` environment variable is different from `production`.
 
 Once registered, the server will use the plugin handlers for all errors (basically, both `setErrorHandler` and `setNotFoundHandler` are called).
 
@@ -123,6 +124,38 @@ When hitting `/invalid` it will return the following:
   "statusCode": 500,
   "id": 123,
   "stack": ["..."]
+}
+```
+
+## Validation and response validation errors
+
+If enabled, response will have status of 400 or 500 (depending on whether the request or response validation failed) and the the body will have the `failedValidations` property.
+
+Example of a client validation error:
+
+```json
+{
+  "statusCode": 400,
+  "error": "Bad Request",
+  "message": "One or more validations failed trying to process your request.",
+  "failedValidations": { "query": { "val": "must match pattern \"ab{2}c\"", "val2": "is not a valid property" } }
+}
+```
+
+Example of a response validation error:
+
+```json
+{
+  "error": "Internal Server Error",
+  "message": "The response returned from the endpoint violates its specification for the HTTP status 200.",
+  "statusCode": 500,
+  "failedValidations": {
+    "response": {
+      "a": "must be a string",
+      "b": "must be present",
+      "c": "is not a valid property"
+    }
+  }
 }
 ```
 

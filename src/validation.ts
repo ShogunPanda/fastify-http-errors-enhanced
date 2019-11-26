@@ -217,7 +217,7 @@ export function addResponseValidation(this: FastifyDecoratedInstance, route: Rou
     const statusCode = reply.res.statusCode
 
     // Never validate error 500
-    if (statusCode === 500) {
+    if (statusCode === INTERNAL_SERVER_ERROR) {
       return payload
     }
 
