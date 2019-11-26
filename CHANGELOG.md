@@ -1,3 +1,8 @@
+### 2019-11-26 / 0.4.0
+
+* feat: Updated docs.
+* feat: Added response validation.
+
 ### 2019-11-20 / 0.3.0
 
 * chore: Include yarn.lock in repo.
