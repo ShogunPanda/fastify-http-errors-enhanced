@@ -2,7 +2,8 @@ import Ajv from 'ajv'
 import fastify, { FastifyInstance, RegisterOptions } from 'fastify'
 import { IncomingMessage, Server, ServerResponse } from 'http'
 import createError, { BadGateway } from 'http-errors'
-import { BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND } from 'http-status-codes'
+import { BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND, UNSUPPORTED_MEDIA_TYPE } from 'http-status-codes'
+import 'jest-additional-expectations'
 import fastifyerrorProperties, { handleErrors } from '../src'
 
 type Callback = () => void
@@ -145,8 +146,8 @@ describe('Plugin', function(): void {
     it('should correctly return client errors', async function(): Promise<void> {
       const response = await server!.inject({ method: 'GET', url: '/not-found' })
 
-      expect(response.statusCode).toEqual(NOT_FOUND)
-      expect(response.headers['content-type']).toEqual('application/json; charset=utf-8')
+      expect(response).toHaveHTTPStatus(NOT_FOUND)
+      expect(response).toBeJSON()
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Not Found',
         message: 'Not found.',
@@ -157,7 +158,7 @@ describe('Plugin', function(): void {
     it('should correctly return server errors', async function(): Promise<void> {
       const response = await server!.inject({ method: 'GET', url: '/bad-gateway' })
 
-      expect(response.statusCode).toEqual(BAD_GATEWAY)
+      expect(response).toHaveHTTPStatus(BAD_GATEWAY)
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Bad Gateway',
         message: 'This was the error message.',
@@ -168,7 +169,7 @@ describe('Plugin', function(): void {
     it('should correctly return additional headers', async function(): Promise<void> {
       const response = await server!.inject({ method: 'GET', url: '/headers' })
 
-      expect(response.statusCode).toEqual(NOT_FOUND)
+      expect(response).toHaveHTTPStatus(NOT_FOUND)
       expect(response.headers).toMatchObject({ 'x-custom-header': 'Custom-Value' })
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Not Found',
@@ -180,7 +181,7 @@ describe('Plugin', function(): void {
     it('should correctly return additional properties', async function(): Promise<void> {
       const response = await server!.inject({ method: 'GET', url: '/properties' })
 
-      expect(response.statusCode).toEqual(BAD_GATEWAY)
+      expect(response).toHaveHTTPStatus(BAD_GATEWAY)
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Bad Gateway',
         message: 'This was the error message.',
@@ -192,7 +193,7 @@ describe('Plugin', function(): void {
     it('should default status code to 500 if outside HTTP range', async function(): Promise<void> {
       const response = await server!.inject({ method: 'GET', url: '/weird-code' })
 
-      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Internal Server Error',
         message: 'This was the error message.',
@@ -204,7 +205,7 @@ describe('Plugin', function(): void {
       await buildServer({ hideUnhandledErrors: false })
       const response = await server!.inject({ method: 'GET', url: '/weird-error' })
 
-      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Internal Server Error',
         message: '[Error] This was the error message.',
@@ -223,7 +224,7 @@ describe('Plugin', function(): void {
     > {
       const response = await server!.inject({ method: 'GET', url: '/error' })
 
-      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
       expect(response.headers).toMatchObject({ 'x-custom-header': 'Custom-Value' })
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Internal Server Error',
@@ -236,12 +237,59 @@ describe('Plugin', function(): void {
       })
     })
 
-    it('should correctly return server errors with masking explicility enabled', async function(): Promise<void> {
+    it('should correctly parse invalid content type errors', async function(): Promise<void> {
+      const response = await server!.inject({
+        method: 'POST',
+        url: '/bad-gateway',
+        headers: { 'content-type': 'image/png' }
+      })
+
+      expect(response).toHaveHTTPStatus(UNSUPPORTED_MEDIA_TYPE)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Unsupported Media Type',
+        message:
+          'Only JSON payloads are accepted. Please set the "Content-Type" header to start with "application/json"',
+        statusCode: UNSUPPORTED_MEDIA_TYPE
+      })
+    })
+
+    it('should correctly parse missing body errors', async function(): Promise<void> {
+      const response = await server!.inject({
+        method: 'POST',
+        url: '/bad-gateway',
+        headers: { 'content-type': 'application/json' }
+      })
+
+      expect(response).toHaveHTTPStatus(BAD_REQUEST)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Bad Request',
+        message: 'The JSON body payload cannot be empty if the "Content-Type" header is set',
+        statusCode: BAD_REQUEST
+      })
+    })
+
+    it('should correctly parse malformed body errors', async function(): Promise<void> {
+      const response = await server!.inject({
+        method: 'POST',
+        url: '/bad-gateway',
+        headers: { 'content-type': 'application/json' },
+        payload: '{a'
+      })
+
+      expect(response).toHaveHTTPStatus(BAD_REQUEST)
+      expect(JSON.parse(response.payload)).toEqual({
+        error: 'Bad Request',
+        message: 'The body payload is not a valid JSON',
+        statusCode: BAD_REQUEST
+      })
+    })
+
+    it('should correctly return server errors with masking explicitily enabled', async function(): Promise<void> {
       await buildServer({ hideUnhandledErrors: true })
 
       const response = await server!.inject({ method: 'GET', url: '/error' })
 
-      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Internal Server Error',
         message: 'An error occurred trying to process your request.',
@@ -249,10 +297,10 @@ describe('Plugin', function(): void {
       })
     })
 
-    it('should correctly return server errors with masking explicility disabled', async function(): Promise<void> {
+    it('should correctly return server errors with masking explicitily disabled', async function(): Promise<void> {
       const response = await server!.inject({ method: 'GET', url: '/error' })
 
-      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
       expect(response.headers).toMatchObject({ 'x-custom-header': 'Custom-Value' })
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Internal Server Error',
@@ -278,7 +326,7 @@ describe('Plugin', function(): void {
         payload: []
       })
 
-      expect(response.statusCode).toEqual(BAD_REQUEST)
+      expect(response).toHaveHTTPStatus(BAD_REQUEST)
       expect(JSON.parse(response.payload)).toEqual({
         statusCode: 400,
         error: 'Bad Request',
@@ -295,7 +343,7 @@ describe('Plugin', function(): void {
         payload: []
       })
 
-      expect(response.statusCode).toEqual(BAD_REQUEST)
+      expect(response).toHaveHTTPStatus(BAD_REQUEST)
       expect(JSON.parse(response.payload)).toEqual({
         statusCode: 400,
         error: 'Bad Request',
@@ -307,7 +355,7 @@ describe('Plugin', function(): void {
     it('should validate headers', async function(): Promise<void> {
       const response = await server!.inject({ method: 'POST', url: '/validated/123', payload: [] })
 
-      expect(response.statusCode).toEqual(BAD_REQUEST)
+      expect(response).toHaveHTTPStatus(BAD_REQUEST)
       expect(JSON.parse(response.payload)).toEqual({
         statusCode: 400,
         error: 'Bad Request',
@@ -319,7 +367,7 @@ describe('Plugin', function(): void {
     it('should validate body', async function(): Promise<void> {
       const response = await server!.inject({ method: 'POST', url: '/validated/123' })
 
-      expect(response.statusCode).toEqual(BAD_REQUEST)
+      expect(response).toHaveHTTPStatus(BAD_REQUEST)
       expect(JSON.parse(response.payload)).toEqual({
         statusCode: 400,
         error: 'Bad Request',
@@ -338,7 +386,7 @@ describe('Plugin', function(): void {
         payload: []
       })
 
-      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Internal Server Error',
         message: '[Error] params.id should be number',
@@ -392,7 +440,7 @@ describe('Plugin', function(): void {
     it('should not required the errorProperties by never masking server side errors ', async function(): Promise<void> {
       const response = await standaloneServer.inject({ method: 'GET', url: '/error/123' })
 
-      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Internal Server Error',
         message: '[Error] This was a generic message.',
@@ -406,7 +454,7 @@ describe('Plugin', function(): void {
     it('should not convert validation errors', async function(): Promise<void> {
       const response = await standaloneServer.inject({ method: 'GET', url: '/error/abc' })
 
-      expect(response.statusCode).toEqual(INTERNAL_SERVER_ERROR)
+      expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
       expect(JSON.parse(response.payload)).toEqual({
         error: 'Internal Server Error',
         message: '[Error] params.id should be number',

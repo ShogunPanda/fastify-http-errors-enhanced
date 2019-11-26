@@ -1,7 +1,6 @@
-const processRoot = process.cwd()
+import { GenericObject, NodeError } from './interfaces'
 
-export type GenericObject = { [key: string]: any }
-export type NodeError = NodeJS.ErrnoException
+const processRoot = process.cwd()
 
 export function addAdditionalProperties(target: GenericObject, source: GenericObject): void {
   for (const v in source) {

@@ -14,7 +14,6 @@
   },
   "author": "Shogun <shogun@cowtech.it>",
   "license": "ISC",
-  "private": false,
   "files": [
     "lib",
     "types",
@@ -35,10 +34,12 @@
     "postpublish": "git push origin && git push origin -f --tags"
   },
   "dependencies": {
+    "ajv": "^6.10.2",
     "fastify-plugin": "^1.6.0",
     "http-errors": "^1.7.3",
     "http-status-codes": "^1.4.0",
     "lodash.get": "^4.4.2",
+    "lodash.upperfirst": "^4.3.1",
     "statuses": "^1.5.0"
   },
   "devDependencies": {
@@ -46,11 +47,12 @@
     "@types/http-errors": "^1.6.2",
     "@types/jest": "^24.0.23",
     "@types/lodash.get": "^4.4.6",
+    "@types/lodash.upperfirst": "^4.3.6",
     "@types/node": "^12.12.8",
     "@types/statuses": "^1.5.0",
-    "ajv": "^6.10.2",
     "fastify": "^2.10.0",
     "jest": "^24.9.0",
+    "jest-additional-expectations": "^0.1.0",
     "prettier": "^1.19.1",
     "ts-jest": "^24.1.0",
     "tslint": "^5.20.1",

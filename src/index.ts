@@ -1,21 +1,18 @@
+import Ajv from 'ajv'
 import { FastifyError, FastifyInstance, FastifyReply, FastifyRequest, RegisterOptions } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
 import { IncomingMessage, Server, ServerResponse } from 'http'
 import createError, { HttpError, InternalServerError, NotFound } from 'http-errors'
-import { BAD_REQUEST, INTERNAL_SERVER_ERROR } from 'http-status-codes'
+import { BAD_REQUEST, INTERNAL_SERVER_ERROR, UNSUPPORTED_MEDIA_TYPE } from 'http-status-codes'
+import upperFirst from 'lodash.upperfirst'
 import statuses from 'statuses'
-import { addAdditionalProperties, GenericObject, NodeError, serializeError } from './properties'
-import { convertValidationErrors, RequestSection } from './validation'
+import { FastifyDecoratedRequest, GenericObject, NodeError, RequestSection } from './interfaces'
+import { addAdditionalProperties, serializeError } from './properties'
+import { addResponseValidation, convertValidationErrors, validationMessagesFormatters } from './validation'
 
-export { addAdditionalProperties, GenericObject } from './properties'
-export { convertValidationErrors, niceJoin, validationMessages, validationMessagesFormatters } from './validation'
-
-export interface FastifyDecoratedRequest extends FastifyRequest {
-  errorProperties?: {
-    hideUnhandledErrors?: boolean
-    convertValidationErrors?: boolean
-  }
-}
+export * from './interfaces'
+export { addAdditionalProperties } from './properties'
+export { convertValidationErrors, niceJoin, validationMessagesFormatters } from './validation'
 
 export function handleNotFoundError(request: FastifyRequest, reply: FastifyReply<unknown>): void {
   handleErrors(new NotFound('Not found.'), request, reply)
@@ -44,9 +41,11 @@ export function handleErrors(
   reply: FastifyReply<unknown>
 ): void {
   // It is a generic error, handle it
+  const code = (error as NodeError).code
+
   if (!('statusCode' in (error as HttpError))) {
-    // If it is a validation error, convert errors to human friendly format
     if ('validation' in error && request.errorProperties?.convertValidationErrors) {
+      // If it is a validation error, convert errors to human friendly format
       error = handleValidationError(error, request)
     } else if (request.errorProperties?.hideUnhandledErrors) {
       // It is requested to hide the error, just log it and then create a generic one
@@ -57,6 +56,12 @@ export function handleErrors(
       error = Object.assign(new InternalServerError(error.message), serializeError(error))
       Object.defineProperty(error, 'stack', { enumerable: true })
     }
+  } else if (code === 'INVALID_CONTENT_TYPE' || code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE') {
+    error = createError(UNSUPPORTED_MEDIA_TYPE, upperFirst(validationMessagesFormatters.contentType()))
+  } else if (code === 'FST_ERR_CTP_EMPTY_JSON_BODY') {
+    error = createError(BAD_REQUEST, upperFirst(validationMessagesFormatters.jsonEmpty()))
+  } else if (code === 'MALFORMED_JSON' || error.message === 'Invalid JSON' || error.stack!.includes('at JSON.parse')) {
+    error = createError(BAD_REQUEST, upperFirst(validationMessagesFormatters.json()))
   }
 
   // Get the status code
@@ -91,12 +96,30 @@ export default fastifyPlugin(
     options: RegisterOptions<S, I, R>,
     done: () => void
   ): void {
-    const hideUnhandledErrors = options.hideUnhandledErrors ?? process.env.NODE_ENV === 'production'
+    const isProduction = process.env.NODE_ENV === 'production'
+    const hideUnhandledErrors = options.hideUnhandledErrors ?? isProduction
     const convertValidationErrors = options.convertValidationErrors ?? true
+    const convertResponsesValidationErrors = options.convertResponsesValidationErrors ?? !isProduction
 
     instance.decorateRequest('errorProperties', { hideUnhandledErrors, convertValidationErrors })
     instance.setErrorHandler(handleErrors)
     instance.setNotFoundHandler(handleNotFoundError)
+
+    if (convertResponsesValidationErrors) {
+      instance.decorate(
+        'responseValidatorSchemaCompiler',
+        new Ajv({
+          // The fastify defaults, with the exception of removeAdditional and coerceTypes, which have been reversed
+          removeAdditional: false,
+          useDefaults: true,
+          coerceTypes: false,
+          allErrors: true,
+          nullable: true
+        })
+      )
+
+      instance.addHook('onRoute', addResponseValidation)
+    }
 
     done()
   },
