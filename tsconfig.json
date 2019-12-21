@@ -13,7 +13,6 @@
     "noImplicitAny": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "keyofStringsOnly": true,
     "strictNullChecks": true,
     "declaration": true
   },
