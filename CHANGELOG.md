@@ -1,3 +1,8 @@
+### 2019-12-21 / 0.4.1
+
+- feat: Improve response validation.
+- chore: Minor change.
+
 ### 2019-11-26 / 0.4.0
 
 - feat: Updated docs.
