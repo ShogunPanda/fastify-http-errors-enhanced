@@ -9,7 +9,7 @@ import {
   ValidationFormatter,
   Validations
 } from './interfaces'
-import get = require('lodash.get')
+import { get } from './utils'
 
 export function niceJoin(array: Array<string>, lastSeparator: string = ' and ', separator: string = ', '): string {
   switch (array.length) {
@@ -145,7 +145,7 @@ export function convertValidationErrors(
         break
       case 'pattern':
         const pattern = e.params.pattern
-        const value = get(data, key) as string
+        const value = get<string>(data, key)
 
         if (pattern === '.+' && !value) {
           message = validationMessagesFormatters.presentString()

@@ -26,7 +26,7 @@
   "types": "types/index.d.ts",
   "scripts": {
     "lint": "tslint --project tsconfig.test.json -t stylish src/*.ts test/*.ts",
-    "test": "jest test --coverage --coverageReporters=html --coverageReporters=text",
+    "test": "jest test --verbose --coverage --coverageReporters=html --coverageReporters=text",
     "ci": "yarn lint && jest --coverage --coverageThreshold='{\"global\":{\"branches\":90,\"functions\":90,\"lines\":90,\"statements\":90}}' --ci --coverageReporters=json",
     "prebuild": "rm -rf lib/* types/* && yarn lint",
     "build": "tsc -p .",
@@ -38,16 +38,12 @@
     "fastify-plugin": "^1.6.0",
     "http-errors": "^1.7.3",
     "http-status-codes": "^1.4.0",
-    "lodash.get": "^4.4.2",
-    "lodash.upperfirst": "^4.3.1",
     "statuses": "^1.5.0"
   },
   "devDependencies": {
     "@cowtech/tslint-config": "^5.13.0",
     "@types/http-errors": "^1.6.2",
     "@types/jest": "^24.0.23",
-    "@types/lodash.get": "^4.4.6",
-    "@types/lodash.upperfirst": "^4.3.6",
     "@types/node": "^12.12.8",
     "@types/statuses": "^1.5.0",
     "fastify": "^2.10.0",
