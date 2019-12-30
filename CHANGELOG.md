@@ -1,3 +1,7 @@
+### 2019-12-30 / 0.5.0
+
+- feat: Drop lodash dependencies.
+
 ### 2019-12-21 / 0.4.1
 
 - feat: Improve response validation.
