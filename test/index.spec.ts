@@ -4,7 +4,7 @@ import { IncomingMessage, Server, ServerResponse } from 'http'
 import createError, { BadGateway } from 'http-errors'
 import { BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND, UNSUPPORTED_MEDIA_TYPE } from 'http-status-codes'
 import 'jest-additional-expectations'
-import fastifyErrorProperties, { handleErrors } from '../src'
+import { handleErrors, plugin as fastifyErrorProperties } from '../src'
 
 type Callback = () => void
 

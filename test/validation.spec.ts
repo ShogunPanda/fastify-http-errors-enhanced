@@ -3,7 +3,7 @@ import fastify, { FastifyInstance, FastifyReply, FastifyRequest, RegisterOptions
 import { IncomingMessage, Server, ServerResponse } from 'http'
 import { ACCEPTED, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes'
 import 'jest-additional-expectations'
-import fastifyerrorProperties, { convertValidationErrors, niceJoin } from '../src'
+import { convertValidationErrors, niceJoin, plugin as fastifyErrorProperties } from '../src'
 
 let server: FastifyInstance | null
 
@@ -17,7 +17,7 @@ async function buildServer(
 
   server = fastify()
 
-  server.register(fastifyerrorProperties, options)
+  server.register(fastifyErrorProperties, options)
 
   server.get('/correct', {
     schema: {

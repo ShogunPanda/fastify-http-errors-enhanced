@@ -49,7 +49,7 @@ const createError = require('http-errors')
 server.register(require('fastify-errors-properties'))
 
 server.get('/invalid', {
-  handler: function(request, reply) {
+  handler: async function(request, reply) {
     throw createError(404, 'You are not supposed to reach this.', { header: { 'X-Req-Id': request.id, id: 123 } })
   }
 })
