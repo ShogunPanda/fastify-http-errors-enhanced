@@ -1,3 +1,7 @@
+### 2020-01-08 / 0.6.0
+
+- fix: Allow CommonJS default import. Fixes #1.
+
 ### 2019-12-30 / 0.5.0
 
 - feat: Drop lodash dependencies.
