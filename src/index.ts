@@ -46,6 +46,5 @@ export const plugin = fastifyPlugin(
   { name: 'fastify-errors-properties' }
 )
 
-// prettier-ignore
 module.exports = plugin
 Object.assign(module.exports, exports)
