@@ -1,3 +1,8 @@
+### 2020-03-07 / 0.6.1
+
+- feat: Export serializeError.
+- chore: Remove leftover.
+
 ### 2020-01-08 / 0.6.0
 
 - fix: Allow CommonJS default import. Fixes #1.
