@@ -19,7 +19,7 @@ export function get<T>(target: any, path: string): T {
 
     const index = token.match(/^(\d+)|(?:\[(\d+)\])$/)
     if (index) {
-      target = target[parseInt(index[1] || index[2], 10)]
+      target = target[parseInt(index[1] ?? index[2], 10)]
     } else {
       target = target[token]
     }

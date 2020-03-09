@@ -2,7 +2,10 @@ import { Ajv, ValidateFunction } from 'ajv'
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { ServerResponse } from 'http'
 
-export type GenericObject = { [key: string]: any }
+export interface GenericObject {
+  [key: string]: any
+}
+
 export type NodeError = NodeJS.ErrnoException
 
 export type RequestSection = 'params' | 'query' | 'querystring' | 'headers' | 'body' | 'response'

@@ -2,9 +2,9 @@
 import { Ajv, ValidateFunction } from 'ajv';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { ServerResponse } from 'http';
-export declare type GenericObject = {
+export interface GenericObject {
     [key: string]: any;
-};
+}
 export declare type NodeError = NodeJS.ErrnoException;
 export declare type RequestSection = 'params' | 'query' | 'querystring' | 'headers' | 'body' | 'response';
 export interface ResponseSchemas {

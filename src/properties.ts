@@ -14,8 +14,8 @@ export function addAdditionalProperties(target: GenericObject, source: GenericOb
 
 export function serializeError(error: Error): GenericObject {
   const serialized: GenericObject = {
-    message: `[${(error as NodeError).code || error.name}] ${error.message}`,
-    stack: (error.stack || '')
+    message: `[${(error as NodeError).code ?? error.name}] ${error.message}`,
+    stack: (error.stack ?? '')
       .split('\n')
       .slice(1)
       .map((s: string) =>

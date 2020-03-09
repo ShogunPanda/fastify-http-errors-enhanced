@@ -82,7 +82,7 @@ export function handleErrors(
   // Send the error back
   reply
     .code(statusCode)
-    .headers(headers || {})
+    .headers(headers ?? {})
     .type('application/json')
     .send(body)
 }

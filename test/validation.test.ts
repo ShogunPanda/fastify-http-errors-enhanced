@@ -2,7 +2,8 @@ import Ajv from 'ajv'
 import fastify, { FastifyInstance, FastifyReply, FastifyRequest, RegisterOptions, ValidationResult } from 'fastify'
 import { IncomingMessage, Server, ServerResponse } from 'http'
 import { ACCEPTED, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes'
-import 'jest-additional-expectations'
+// @ts-ignore
+import t from 'tap'
 import { convertValidationErrors, niceJoin, plugin as fastifyErrorProperties } from '../src'
 
 let server: FastifyInstance | null
@@ -114,15 +115,16 @@ async function buildServer(
   return server
 }
 
-describe('Validation', function(): void {
-  it('niceJoin utility method', function(): void {
-    expect(niceJoin([])).toEqual('')
-    expect(niceJoin(['a'])).toEqual('a')
-    expect(niceJoin(['b', 'c'], '@')).toEqual('b@c')
-    expect(niceJoin(['b', 'c', 'd'])).toEqual('b, c and d')
+t.test('Validation', (t: any) => {
+  t.test('niceJoin utility method', (t: any) => {
+    t.equal(niceJoin([]), '')
+    t.equal(niceJoin(['a']), 'a')
+    t.equal(niceJoin(['b', 'c'], '@'), 'b@c')
+    t.equal(niceJoin(['b', 'c', 'd']), 'b, c and d')
+    t.end()
   })
 
-  it('should correctly parse validation errors', function(): void {
+  t.test('should correctly parse validation errors', (t: any) => {
     const ajv = new Ajv({
       removeAdditional: false,
       useDefaults: true,
@@ -345,38 +347,46 @@ describe('Validation', function(): void {
 
     const validate = ajv.compile(schema)
 
-    expect(validate(data)).toBeFalsy()
-    expect(convertValidationErrors('body', data, validate.errors as Array<ValidationResult>)).toEqual(expected)
+    t.false(validate(data))
+    t.deepEqual(convertValidationErrors('body', data, validate.errors as Array<ValidationResult>), expected)
+    t.end()
   })
+
+  t.end()
 })
 
-describe('Response Validation', function(): void {
-  beforeEach(buildServer)
-  afterEach(() => server!.close())
+t.test('Response Validation', (t: any) => {
+  t.afterEach(() => server!.close())
 
-  it('should allow valid endpoints', async function(): Promise<void> {
+  t.test('should allow valid endpoints', async (t: any) => {
+    await buildServer()
+
     const response = await server!.inject({ method: 'GET', url: '/correct' })
 
-    expect(response).toHaveHTTPStatus(OK)
-    expect(JSON.parse(response.payload)).toEqual({ a: '1' })
+    t.equal(response.statusCode, OK)
+    t.deepEqual(JSON.parse(response.payload), { a: '1' })
   })
 
-  it('should validate the response code', async function(): Promise<void> {
+  t.test('should validate the response code', async (t: any) => {
+    await buildServer()
+
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
-    expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
-    expect(JSON.parse(response.payload)).toEqual({
+    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+    t.deepEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
       statusCode: INTERNAL_SERVER_ERROR
     })
   })
 
-  it('should validate the response body', async function(): Promise<void> {
+  t.test('should validate the response body', async (t: any) => {
+    await buildServer()
+
     const response = await server!.inject({ method: 'GET', url: '/bad-body' })
 
-    expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
-    expect(JSON.parse(response.payload)).toEqual({
+    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+    t.deepEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'The response returned from the endpoint violates its specification for the HTTP status 200.',
       statusCode: INTERNAL_SERVER_ERROR,
@@ -390,39 +400,46 @@ describe('Response Validation', function(): void {
     })
   })
 
-  it('should allow everything no response schema is defined', async function(): Promise<void> {
+  t.test('should allow everything no response schema is defined', async (t: any) => {
+    await buildServer()
+
     const response = await server!.inject({ method: 'GET', url: '/no-schema' })
 
-    expect(response).toHaveHTTPStatus(OK)
-    expect(JSON.parse(response.payload)).toEqual({ a: 1, c: 2 })
+    t.equal(response.statusCode, OK)
+    t.deepEqual(JSON.parse(response.payload), { a: 1, c: 2 })
   })
 
-  it('should allow everything if the payload is not JSON', async function(): Promise<void> {
+  t.test('should allow everything if the payload is not JSON', async (t: any) => {
+    await buildServer()
+
     const response = await server!.inject({ method: 'GET', url: '/no-json' })
 
-    expect(response).toHaveHTTPStatus(ACCEPTED)
-    expect(response).toBeText()
-    expect(response.payload).toEqual('OK')
+    t.equal(response.statusCode, ACCEPTED)
+    t.match(response.headers['content-type'], /^text\/plain/)
+    t.equal(response.payload, 'OK')
   })
 
-  it('should allow everything if explicitily disabled', async function(): Promise<void> {
+  t.test('should allow everything if explicitily disabled', async (t: any) => {
     await buildServer({ convertResponsesValidationErrors: false })
+
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
-    expect(response).toHaveHTTPStatus(ACCEPTED)
-    expect(JSON.parse(response.payload)).toEqual({ a: 1 })
+    t.equal(response.statusCode, ACCEPTED)
+    t.deepEqual(JSON.parse(response.payload), { a: 1 })
   })
 
-  it('should allow everything if explicitily enabled', async function(): Promise<void> {
+  t.test('should allow everything if explicitily enabled', async (t: any) => {
     await buildServer({ convertResponsesValidationErrors: true })
 
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
-    expect(response).toHaveHTTPStatus(INTERNAL_SERVER_ERROR)
-    expect(JSON.parse(response.payload)).toEqual({
+    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+    t.deepEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
       statusCode: INTERNAL_SERVER_ERROR
     })
   })
+
+  t.end()
 })

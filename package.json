@@ -25,37 +25,32 @@
   "typings": "types/index.d.ts",
   "types": "types/index.d.ts",
   "scripts": {
-    "lint": "tslint --project tsconfig.test.json -t stylish src/*.ts test/*.ts",
-    "test": "jest test --verbose --coverage --coverageReporters=html --coverageReporters=text",
-    "ci": "yarn lint && jest --coverage --coverageThreshold='{\"global\":{\"branches\":90,\"functions\":90,\"lines\":90,\"statements\":90}}' --ci --coverageReporters=json",
+    "lint": "eslint src/*.ts test/*.ts",
+    "test": "tap --reporter=spec --coverage-report=html --coverage-report=text --no-browser test/*.test.ts",
+    "ci": "yarn lint && tap --no-color --reporter=spec --coverage-report=json --coverage-report=text --branches 90 --functions 90 --lines 90 --statements 90 test/*.test.ts",
     "prebuild": "rm -rf lib/* types/* && yarn lint",
     "build": "tsc -p .",
     "prepublishOnly": "yarn ci",
     "postpublish": "git push origin && git push origin -f --tags"
   },
   "dependencies": {
-    "ajv": "^6.10.2",
-    "fastify-plugin": "^1.6.0",
+    "ajv": "^6.12.0",
+    "fastify-plugin": "^1.6.1",
     "http-errors": "^1.7.3",
     "http-status-codes": "^1.4.0",
     "statuses": "^1.5.0"
   },
   "devDependencies": {
-    "@cowtech/tslint-config": "^5.13.0",
-    "@types/http-errors": "^1.6.2",
-    "@types/jest": "^24.0.23",
-    "@types/node": "^12.12.8",
+    "@cowtech/eslint-config": "^6.8.4",
+    "@types/http-errors": "^1.6.3",
+    "@types/node": "^13.9.0",
     "@types/statuses": "^1.5.0",
-    "fastify": "^2.10.0",
-    "jest": "^24.9.0",
-    "jest-additional-expectations": "^0.1.0",
+    "fastify": "^2.12.1",
     "prettier": "^1.19.1",
-    "ts-jest": "^24.1.0",
-    "tslint": "^5.20.1",
-    "typescript": "^3.7.2"
+    "tap": "^14.10.6",
+    "typescript": "^3.8.3"
   },
-  "jest": {
-    "preset": "ts-jest",
-    "watchman": false
+  "engines": {
+    "node": ">=12.15.0"
   }
 }

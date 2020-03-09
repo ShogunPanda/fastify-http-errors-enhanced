@@ -74,7 +74,7 @@ export const validationMessagesFormatters: { [key: string]: ValidationFormatter 
       values.map((f: string) => `"${f}"`),
       ' or '
     )}`,
-  pattern: (pattern: string) => `must match pattern "${pattern.replace(/\(\?\:/g, '(')}"`,
+  pattern: (pattern: string) => `must match pattern "${pattern.replace(/\(\?:/g, '(')}"`,
   invalidResponseCode: (code: number) => `This endpoint cannot respond with HTTP status ${code}.`,
   invalidResponse: (code: number) =>
     `The response returned from the endpoint violates its specification for the HTTP status ${code}.`,
@@ -95,6 +95,9 @@ export function convertValidationErrors(
   // For each error
   for (const e of validationErrors) {
     let message = ''
+    let pattern: string
+    let value: string
+    let reason: string
 
     // Normalize the key
     let key = e.dataPath
@@ -144,8 +147,8 @@ export function convertValidationErrors(
         message = validationMessagesFormatters.enum(e.params.allowedValues)
         break
       case 'pattern':
-        const pattern = e.params.pattern
-        const value = get<string>(data, key)
+        pattern = e.params.pattern
+        value = get<string>(data, key)
 
         if (pattern === '.+' && !value) {
           message = validationMessagesFormatters.presentString()
@@ -155,7 +158,7 @@ export function convertValidationErrors(
 
         break
       case 'format':
-        let reason = e.params.format
+        reason = e.params.format
 
         // Normalize the key
         if (reason === 'date-time') {
@@ -168,7 +171,7 @@ export function convertValidationErrors(
     }
 
     // No custom message was found, default to input one replacing the starting verb and adding some path info
-    if (!message) {
+    if (!message.length) {
       message = `${e.message.replace(/^should/, 'must')} (${e.keyword})`
     }
 
@@ -178,7 +181,7 @@ export function convertValidationErrors(
       .replace(/\[([^\]]+)\]/g, '.$1') // Object path
 
     // Remove useless quotes
-    if (property.match(/(?:^['"])(?:[^\.]+)(?:['"]$)/)) {
+    if (property.match(/(?:^['"])(?:[^.]+)(?:['"]$)/)) {
       property = property.substring(1, property.length - 1)
     }
 
@@ -204,7 +207,7 @@ export function addResponseValidation(this: FastifyDecoratedInstance, route: Rou
 
       return accu
     },
-    {} as ResponseSchemas
+    {}
   )
 
   // Note that this hook is not called for non JSON payloads therefore validation is not possible in such cases
