@@ -1,3 +1,7 @@
+### 2020-03-09 / 0.7.0
+
+- feat: Improve types, only support Node LTS, replaced jest with tap.
+
 ### 2020-03-07 / 0.6.1
 
 - feat: Export serializeError.
