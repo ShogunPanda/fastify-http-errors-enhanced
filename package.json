@@ -27,7 +27,8 @@
   "scripts": {
     "lint": "eslint src/*.ts test/*.ts",
     "test": "tap --reporter=spec --coverage-report=html --coverage-report=text --no-browser test/*.test.ts",
-    "ci": "yarn lint && tap --no-color --reporter=spec --coverage-report=json --coverage-report=text --branches 90 --functions 90 --lines 90 --statements 90 test/*.test.ts",
+    "test:ci": "tap --no-color --reporter=spec --coverage-report=json --coverage-report=text --branches 90 --functions 90 --lines 90 --statements 90 test/*.test.ts",
+    "ci": "yarn lint && yarn test:ci",
     "prebuild": "rm -rf lib/* types/* && yarn lint",
     "build": "tsc -p .",
     "prepublishOnly": "yarn ci",
