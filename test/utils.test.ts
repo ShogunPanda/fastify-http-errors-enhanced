@@ -1,9 +1,12 @@
-// @ts-ignore
+/* eslint-disable @typescript-eslint/no-floating-promises */
+
 import t from 'tap'
 import { get, upperFirst } from '../src/utils'
 
-t.test('Utils', (t: any) => {
-  t.test('.upperFirst should correctly convert strings', (t: any) => {
+type Test = typeof t
+
+t.test('Utils', (t: Test) => {
+  t.test('.upperFirst should correctly convert strings', (t: Test) => {
     t.equal(upperFirst('abc'), 'Abc')
     t.equal(upperFirst('aBC'), 'ABC')
     t.equal(upperFirst(''), '')
@@ -12,7 +15,7 @@ t.test('Utils', (t: any) => {
     t.end()
   })
 
-  t.test('.get should correctly return paths', (t: any) => {
+  t.test('.get should correctly return paths', (t: Test) => {
     const target = {
       a: [{ b: { c: 1 } }],
       b: null

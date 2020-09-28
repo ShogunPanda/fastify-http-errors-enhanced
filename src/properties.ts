@@ -18,15 +18,11 @@ export function serializeError(error: Error): GenericObject {
     stack: (error.stack ?? '')
       .split('\n')
       .slice(1)
-      .map((s: string) =>
-        s
-          .trim()
-          .replace(/^at /, '')
-          .replace(processRoot, '$ROOT')
-      )
+      .map((s: string) => s.trim().replace(/^at /, '').replace(processRoot, '$ROOT'))
   }
 
   addAdditionalProperties(serialized, error)
+  serialized.code = undefined
 
   return serialized
 }

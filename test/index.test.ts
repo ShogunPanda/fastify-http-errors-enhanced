@@ -1,28 +1,18 @@
-import Ajv from 'ajv'
-import fastify, { FastifyInstance, RegisterOptions } from 'fastify'
-import { IncomingMessage, Server, ServerResponse } from 'http'
+/* eslint-disable @typescript-eslint/no-floating-promises */
+
+import fastify, { FastifyInstance, FastifyPluginOptions } from 'fastify'
 import createError, { BadGateway } from 'http-errors'
-import { BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND, UNSUPPORTED_MEDIA_TYPE } from 'http-status-codes'
-// @ts-ignore
+import StatusCodes from 'http-status-codes'
 import t from 'tap'
 import { handleErrors, plugin as fastifyErrorProperties } from '../src'
 
+type Test = typeof t
 type Callback = () => void
 
 let server: FastifyInstance | null
 let standaloneServer: FastifyInstance | null
 
 function defaultRoutes(instance: FastifyInstance, _options: unknown, done: Callback): void {
-  const ajv = new Ajv({
-    removeAdditional: false,
-    useDefaults: true,
-    coerceTypes: true,
-    allErrors: true,
-    nullable: true
-  })
-
-  instance.setSchemaCompiler((schema: object) => ajv.compile(schema))
-
   instance.get('/bad-gateway', {
     async handler(): Promise<void> {
       throw new BadGateway('This was the error message.')
@@ -31,7 +21,7 @@ function defaultRoutes(instance: FastifyInstance, _options: unknown, done: Callb
 
   instance.get('/headers', {
     async handler(): Promise<void> {
-      const error = createError(NOT_FOUND, 'This was the error message.', {
+      const error = createError(StatusCodes.NOT_FOUND, 'This was the error message.', {
         headers: { 'X-Custom-Header': 'Custom-Value' }
       })
 
@@ -41,7 +31,7 @@ function defaultRoutes(instance: FastifyInstance, _options: unknown, done: Callb
 
   instance.get('/properties', {
     async handler(): Promise<void> {
-      const error = createError(BAD_GATEWAY, 'This was the error message.', { id: 1 })
+      const error = createError(StatusCodes.BAD_GATEWAY, 'This was the error message.', { id: 1 })
 
       throw error
     }
@@ -123,7 +113,7 @@ function defaultRoutes(instance: FastifyInstance, _options: unknown, done: Callb
 }
 
 async function buildServer(
-  options: RegisterOptions<Server, IncomingMessage, ServerResponse> = {},
+  options: FastifyPluginOptions = {},
   routes?: (instance: FastifyInstance, _options: unknown, done: Callback) => void
 ): Promise<FastifyInstance> {
   if (server) {
@@ -131,7 +121,17 @@ async function buildServer(
     server = null
   }
 
-  server = fastify()
+  server = fastify({
+    ajv: {
+      customOptions: {
+        removeAdditional: false,
+        useDefaults: true,
+        coerceTypes: true,
+        allErrors: true,
+        nullable: true
+      }
+    }
+  })
 
   server.register(fastifyErrorProperties, options)
   server.register(routes ?? defaultRoutes)
@@ -180,88 +180,90 @@ async function buildStandaloneServer(): Promise<FastifyInstance> {
   return standaloneServer
 }
 
-t.test('Plugin', (t: any) => {
-  t.test('Handling http-errors', (t: any) => {
-    t.afterEach(() => server!.close())
+t.test('Plugin', (t: Test) => {
+  t.test('Handling http-errors', (t: Test) => {
+    t.afterEach(async () => {
+      await server!.close()
+    })
 
-    t.test('should correctly return client errors', async (t: any) => {
+    t.test('should correctly return client errors', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({ method: 'GET', url: '/not-found' })
 
-      t.equal(response.statusCode, NOT_FOUND)
+      t.equal(response.statusCode, StatusCodes.NOT_FOUND)
       t.match(response.headers['content-type'], /^application\/json/)
       t.deepEqual(JSON.parse(response.payload), {
         error: 'Not Found',
         message: 'Not found.',
-        statusCode: NOT_FOUND
+        statusCode: StatusCodes.NOT_FOUND
       })
     })
 
-    t.test('should correctly return server errors', async (t: any) => {
+    t.test('should correctly return server errors', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({ method: 'GET', url: '/bad-gateway' })
 
-      t.equal(response.statusCode, BAD_GATEWAY)
+      t.equal(response.statusCode, StatusCodes.BAD_GATEWAY)
       t.deepEqual(JSON.parse(response.payload), {
         error: 'Bad Gateway',
         message: 'This was the error message.',
-        statusCode: BAD_GATEWAY
+        statusCode: StatusCodes.BAD_GATEWAY
       })
     })
 
-    t.test('should correctly return additional headers', async (t: any) => {
+    t.test('should correctly return additional headers', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({ method: 'GET', url: '/headers' })
 
-      t.equal(response.statusCode, NOT_FOUND)
+      t.equal(response.statusCode, StatusCodes.NOT_FOUND)
       t.equal(response.headers['x-custom-header'], 'Custom-Value')
       t.deepEqual(JSON.parse(response.payload), {
         error: 'Not Found',
         message: 'This was the error message.',
-        statusCode: NOT_FOUND
+        statusCode: StatusCodes.NOT_FOUND
       })
     })
 
-    t.test('should correctly return additional properties', async (t: any) => {
+    t.test('should correctly return additional properties', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({ method: 'GET', url: '/properties' })
 
-      t.equal(response.statusCode, BAD_GATEWAY)
+      t.equal(response.statusCode, StatusCodes.BAD_GATEWAY)
       t.deepEqual(JSON.parse(response.payload), {
         error: 'Bad Gateway',
         message: 'This was the error message.',
-        statusCode: BAD_GATEWAY,
+        statusCode: StatusCodes.BAD_GATEWAY,
         id: 1
       })
     })
 
-    t.test('should default status code to 500 if outside HTTP range', async (t: any) => {
+    t.test('should default status code to 500 if outside HTTP range', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({ method: 'GET', url: '/weird-code' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+      t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
       t.deepEqual(JSON.parse(response.payload), {
         error: 'Internal Server Error',
         message: 'This was the error message.',
-        statusCode: INTERNAL_SERVER_ERROR
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR
       })
     })
 
-    t.test('should have good defaults if the error is weirdly manipulated', async (t: any) => {
+    t.test('should have good defaults if the error is weirdly manipulated', async (t: Test) => {
       await buildServer({ hideUnhandledErrors: false })
 
       const response = await server!.inject({ method: 'GET', url: '/weird-error' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+      t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
       t.deepEqual(JSON.parse(response.payload), {
         error: 'Internal Server Error',
         message: '[Error] This was the error message.',
-        statusCode: INTERNAL_SERVER_ERROR,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         stack: []
       })
     })
@@ -269,29 +271,35 @@ t.test('Plugin', (t: any) => {
     t.end()
   })
 
-  t.test('Handling generic errors', (t: any) => {
-    t.afterEach(() => server!.close())
+  t.test('Handling generic errors', (t: Test) => {
+    t.afterEach(async () => {
+      await server!.close()
+    })
 
     t.test(
       'should correctly return generic errors by wrapping them in a 500 http-error, including headers and properties',
-      async (t: any) => {
+      async (t: Test) => {
         await buildServer()
 
         const response = await server!.inject({ method: 'GET', url: '/error' })
 
-        t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+        t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
         t.equal(response.headers['x-custom-header'], 'Custom-Value')
-        t.match(JSON.parse(response.payload), {
+
+        const payload = JSON.parse(response.payload)
+        t.match(payload.stack[0], /Object\.handler \(\$ROOT\/test\/index\.test\.ts:\d+:\d+\)/)
+        delete payload.stack
+
+        t.deepEqual(payload, {
           error: 'Internal Server Error',
           message: '[Error] This was a generic message.',
-          statusCode: INTERNAL_SERVER_ERROR,
-          id: 1,
-          stack: [/Object\.handler \(\$ROOT\/test\/index\.test\.ts:\d+:\d+\)/]
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          id: 1
         })
       }
     )
 
-    t.test('should correctly parse invalid content type errors', async (t: any) => {
+    t.test('should correctly parse invalid content type errors', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({
@@ -300,16 +308,16 @@ t.test('Plugin', (t: any) => {
         headers: { 'content-type': 'image/png' }
       })
 
-      t.equal(response.statusCode, UNSUPPORTED_MEDIA_TYPE)
+      t.equal(response.statusCode, StatusCodes.UNSUPPORTED_MEDIA_TYPE)
       t.deepEqual(JSON.parse(response.payload), {
         error: 'Unsupported Media Type',
         message:
           'Only JSON payloads are accepted. Please set the "Content-Type" header to start with "application/json"',
-        statusCode: UNSUPPORTED_MEDIA_TYPE
+        statusCode: StatusCodes.UNSUPPORTED_MEDIA_TYPE
       })
     })
 
-    t.test('should correctly parse missing body errors', async (t: any) => {
+    t.test('should correctly parse missing body errors', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({
@@ -318,15 +326,15 @@ t.test('Plugin', (t: any) => {
         headers: { 'content-type': 'application/json' }
       })
 
-      t.equal(response.statusCode, BAD_REQUEST)
+      t.equal(response.statusCode, StatusCodes.BAD_REQUEST)
       t.deepEqual(JSON.parse(response.payload), {
         error: 'Bad Request',
         message: 'The JSON body payload cannot be empty if the "Content-Type" header is set',
-        statusCode: BAD_REQUEST
+        statusCode: StatusCodes.BAD_REQUEST
       })
     })
 
-    t.test('should correctly parse malformed body errors', async (t: any) => {
+    t.test('should correctly parse malformed body errors', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({
@@ -336,52 +344,58 @@ t.test('Plugin', (t: any) => {
         payload: '{a'
       })
 
-      t.equal(response.statusCode, BAD_REQUEST)
+      t.equal(response.statusCode, StatusCodes.BAD_REQUEST)
       t.deepEqual(JSON.parse(response.payload), {
         error: 'Bad Request',
         message: 'The body payload is not a valid JSON',
-        statusCode: BAD_REQUEST
+        statusCode: StatusCodes.BAD_REQUEST
       })
     })
 
-    t.test('should correctly return server errors with masking explicitily enabled', async (t: any) => {
+    t.test('should correctly return server errors with masking explicitily enabled', async (t: Test) => {
       await buildServer()
 
       await buildServer({ hideUnhandledErrors: true })
 
       const response = await server!.inject({ method: 'GET', url: '/error' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+      t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
       t.deepEqual(JSON.parse(response.payload), {
         error: 'Internal Server Error',
         message: 'An error occurred trying to process your request.',
-        statusCode: INTERNAL_SERVER_ERROR
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR
       })
     })
 
-    t.test('should correctly return server errors with masking explicitily disabled', async (t: any) => {
+    t.test('should correctly return server errors with masking explicitily disabled', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({ method: 'GET', url: '/error' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+      t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
       t.equal(response.headers['x-custom-header'], 'Custom-Value')
-      t.match(JSON.parse(response.payload), {
+
+      const payload = JSON.parse(response.payload)
+      t.match(payload.stack[0], /Object\.handler \(\$ROOT\/test\/index\.test\.ts:\d+:\d+\)/)
+      delete payload.stack
+
+      t.deepEqual(payload, {
         error: 'Internal Server Error',
         message: '[Error] This was a generic message.',
-        statusCode: INTERNAL_SERVER_ERROR,
-        id: 1,
-        stack: [/Object\.handler \(\$ROOT\/test\/index\.test\.ts:\d+:\d+\)/]
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        id: 1
       })
     })
 
     t.end()
   })
 
-  t.test('Handling validation errors', (t: any) => {
-    t.afterEach(() => server!.close())
+  t.test('Handling validation errors', (t: Test) => {
+    t.afterEach(async () => {
+      await server!.close()
+    })
 
-    t.test('should validate params', async (t: any) => {
+    t.test('should validate params', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({
@@ -391,63 +405,63 @@ t.test('Plugin', (t: any) => {
         payload: []
       })
 
-      t.equal(response.statusCode, BAD_REQUEST)
+      t.equal(response.statusCode, StatusCodes.BAD_REQUEST)
       t.deepEqual(JSON.parse(response.payload), {
-        statusCode: BAD_REQUEST,
+        statusCode: StatusCodes.BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
         failedValidations: { params: { id: 'must be a valid number' } }
       })
     })
 
-    t.test('should validate querystring', async (t: any) => {
+    t.test('should validate querystring', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({
         method: 'POST',
         url: '/validated/123',
-        query: { val: 13, val2: 'asd' },
+        query: { val: '13', val2: 'asd' },
         payload: []
       })
 
-      t.equal(response.statusCode, BAD_REQUEST)
+      t.equal(response.statusCode, StatusCodes.BAD_REQUEST)
       t.deepEqual(JSON.parse(response.payload), {
-        statusCode: BAD_REQUEST,
+        statusCode: StatusCodes.BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
         failedValidations: { query: { val: 'must match pattern "ab{2}c"', val2: 'is not a valid property' } }
       })
     })
 
-    t.test('should validate headers', async (t: any) => {
+    t.test('should validate headers', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({ method: 'POST', url: '/validated/123', payload: [] })
 
-      t.equal(response.statusCode, BAD_REQUEST)
+      t.equal(response.statusCode, StatusCodes.BAD_REQUEST)
       t.deepEqual(JSON.parse(response.payload), {
-        statusCode: BAD_REQUEST,
+        statusCode: StatusCodes.BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
         failedValidations: { headers: { 'x-header': 'must be present' } }
       })
     })
 
-    t.test('should validate body', async (t: any) => {
+    t.test('should validate body', async (t: Test) => {
       await buildServer()
 
       const response = await server!.inject({ method: 'POST', url: '/validated/123' })
 
-      t.equal(response.statusCode, BAD_REQUEST)
+      t.equal(response.statusCode, StatusCodes.BAD_REQUEST)
       t.deepEqual(JSON.parse(response.payload), {
-        statusCode: BAD_REQUEST,
+        statusCode: StatusCodes.BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
         failedValidations: { body: { $root: 'must be an array' } }
       })
     })
 
-    t.test('should not convert validation if option is disabled', async (t: any) => {
+    t.test('should not convert validation if option is disabled', async (t: Test) => {
       await buildServer({ convertValidationErrors: false })
 
       const response = await server!.inject({
@@ -457,12 +471,16 @@ t.test('Plugin', (t: any) => {
         payload: []
       })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-      t.match(JSON.parse(response.payload), {
+      t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
+
+      const payload = JSON.parse(response.payload)
+      t.match(payload.stack[1], /wrapValidationError \(\$ROOT\/node_modules\/fastify\/.+:\d+:\d+\)/)
+      delete payload.stack
+
+      t.deepEqual(payload, {
         error: 'Internal Server Error',
         message: '[Error] params.id should be number',
-        statusCode: INTERNAL_SERVER_ERROR,
-        stack: [/.+/, /validate \(\$ROOT\/node_modules\/fastify\/.+:\d+:\d+\)/],
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         validation: [
           {
             dataPath: '.id',
@@ -473,55 +491,70 @@ t.test('Plugin', (t: any) => {
             },
             schemaPath: '#/properties/id/type'
           }
-        ]
+        ],
+        validationContext: 'params'
       })
     })
 
     t.end()
   })
 
-  t.test('Using standalone error handling', (t: any) => {
-    t.afterEach(() => standaloneServer!.close())
+  t.test('Using standalone error handling', (t: Test) => {
+    t.afterEach(async () => {
+      await standaloneServer!.close()
+    })
 
-    t.test('should not return the errorProperties by never masking server side errors', async (t: any) => {
+    t.test('should not return the errorProperties by never masking server side errors', async (t: Test) => {
       await buildStandaloneServer()
 
       const response = await standaloneServer!.inject({ method: 'GET', url: '/error/123' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-      t.match(JSON.parse(response.payload), {
+      t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
+
+      const payload = JSON.parse(response.payload)
+      t.match(payload.stack[0], /Object\.handler \(\$ROOT\/test\/index\.test\.ts:\d+:\d+\)/)
+      delete payload.stack
+
+      t.deepEqual(payload, {
         error: 'Internal Server Error',
         message: '[Error] This was a generic message.',
-        statusCode: INTERNAL_SERVER_ERROR,
-        stack: [/Object\.handler \(\$ROOT\/test\/index\.test\.ts:\d+:\d+\)/]
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR
       })
     })
 
-    t.test('should return error codes', async (t: any) => {
+    t.test('should return error codes', async (t: Test) => {
       await buildStandaloneServer()
 
       const response = await standaloneServer!.inject({ method: 'GET', url: '/error/code' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-      t.match(JSON.parse(response.payload), {
+      t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
+
+      const payload = JSON.parse(response.payload)
+      t.match(payload.stack[0], /Object\.handler \(\$ROOT\/test\/index\.test\.ts:\d+:\d+\)/)
+      delete payload.stack
+
+      t.deepEqual(payload, {
         error: 'Internal Server Error',
         message: '[CODE] This was a generic message.',
-        statusCode: INTERNAL_SERVER_ERROR,
-        stack: [/Object\.handler \(\$ROOT\/test\/index\.test\.ts:\d+:\d+\)/]
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR
       })
     })
 
-    t.test('should not convert validation errors', async (t: any) => {
+    t.test('should not convert validation errors', async (t: Test) => {
       await buildStandaloneServer()
 
       const response = await standaloneServer!.inject({ method: 'GET', url: '/error/abc' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-      t.match(JSON.parse(response.payload), {
+      t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
+
+      const payload = JSON.parse(response.payload)
+      t.match(payload.stack[1], /wrapValidationError \(\$ROOT\/node_modules\/fastify\/.+:\d+:\d+\)/)
+      delete payload.stack
+
+      t.deepEqual(payload, {
         error: 'Internal Server Error',
         message: '[Error] params.id should be number',
-        statusCode: INTERNAL_SERVER_ERROR,
-        stack: [/.+/, /validate \(\$ROOT\/node_modules\/fastify\/.+:\d+:\d+\)/],
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         validation: [
           {
             dataPath: '.id',
@@ -532,7 +565,8 @@ t.test('Plugin', (t: any) => {
             },
             schemaPath: '#/properties/id/type'
           }
-        ]
+        ],
+        validationContext: 'params'
       })
     })
 

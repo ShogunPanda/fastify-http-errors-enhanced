@@ -1,14 +1,7 @@
-import { FastifyInstance, FastifyRequest, RouteOptions, ValidationResult } from 'fastify'
+import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions, ValidationResult } from 'fastify'
 import createError from 'http-errors'
-import { INTERNAL_SERVER_ERROR } from 'http-status-codes'
-import {
-  FastifyDecoratedInstance,
-  FastifyDecoratedReply,
-  RequestSection,
-  ResponseSchemas,
-  ValidationFormatter,
-  Validations
-} from './interfaces'
+import StatusCodes from 'http-status-codes'
+import { RequestSection, ResponseSchemas, ValidationFormatter, Validations } from './interfaces'
 import { get } from './utils'
 
 export function niceJoin(array: Array<string>, lastSeparator: string = ' and ', separator: string = ', '): string {
@@ -114,11 +107,11 @@ export function convertValidationErrors(
     switch (e.keyword) {
       case 'required':
       case 'dependencies':
-        key = e.params.missingProperty
+        key = e.params.missingProperty as string
         message = validationMessagesFormatters.missing()
         break
       case 'additionalProperties':
-        key = e.params.additionalProperty
+        key = e.params.additionalProperty as string
 
         message = validationMessagesFormatters.unknown()
         break
@@ -147,7 +140,7 @@ export function convertValidationErrors(
         message = validationMessagesFormatters.enum(e.params.allowedValues)
         break
       case 'pattern':
-        pattern = e.params.pattern
+        pattern = e.params.pattern as string
         value = get<string>(data, key)
 
         if (pattern === '.+' && !value) {
@@ -158,7 +151,7 @@ export function convertValidationErrors(
 
         break
       case 'format':
-        reason = e.params.format
+        reason = e.params.format as string
 
         // Normalize the key
         if (reason === 'date-time') {
@@ -196,31 +189,27 @@ export function convertValidationErrors(
   return { [section]: errors }
 }
 
-export function addResponseValidation(this: FastifyDecoratedInstance, route: RouteOptions): void {
+export function addResponseValidation(this: FastifyInstance, route: RouteOptions): void {
   if (!route.schema?.response) {
     return
   }
 
-  const validators = Object.entries(route.schema.response).reduce<ResponseSchemas>(
-    (accu: ResponseSchemas, [code, schema]: [string, object]) => {
-      accu[code] = this.responseValidatorSchemaCompiler.compile(schema)
-
-      return accu
-    },
-    {}
-  )
+  const validators: ResponseSchemas = {}
+  for (const [code, schema] of Object.entries(route.schema.response as { [key: string]: object })) {
+    validators[code] = this.responseValidatorSchemaCompiler.compile(schema)
+  }
 
   // Note that this hook is not called for non JSON payloads therefore validation is not possible in such cases
-  route.preSerialization = async function(
+  route.preSerialization = async function (
     this: FastifyInstance,
     _request: FastifyRequest,
-    reply: FastifyDecoratedReply,
+    reply: FastifyReply,
     payload: any
   ): Promise<any> {
-    const statusCode = reply.res.statusCode
+    const statusCode = reply.raw.statusCode
 
     // Never validate error 500
-    if (statusCode === INTERNAL_SERVER_ERROR) {
+    if (statusCode === StatusCodes.INTERNAL_SERVER_ERROR) {
       return payload
     }
 
@@ -228,14 +217,14 @@ export function addResponseValidation(this: FastifyDecoratedInstance, route: Rou
     const validator = validators[statusCode]
 
     if (!validator) {
-      throw createError(INTERNAL_SERVER_ERROR, validationMessagesFormatters.invalidResponseCode(statusCode))
+      throw createError(StatusCodes.INTERNAL_SERVER_ERROR, validationMessagesFormatters.invalidResponseCode(statusCode))
     }
 
     // Now validate the payload
     const valid = validator(payload)
 
     if (!valid) {
-      throw createError(INTERNAL_SERVER_ERROR, validationMessagesFormatters.invalidResponse(statusCode), {
+      throw createError(StatusCodes.INTERNAL_SERVER_ERROR, validationMessagesFormatters.invalidResponse(statusCode), {
         failedValidations: convertValidationErrors('response', payload, validator.errors as Array<ValidationResult>)
       })
     }

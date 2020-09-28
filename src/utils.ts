@@ -1,5 +1,4 @@
 export function upperFirst(source: any): string {
-  // tslint:disable-next-line strict-type-predicates
   if (typeof source !== 'string' || !source.length) {
     return source
   }

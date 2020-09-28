@@ -35,21 +35,22 @@
     "postpublish": "git push origin && git push origin -f --tags"
   },
   "dependencies": {
-    "ajv": "^6.12.0",
-    "fastify-plugin": "^1.6.1",
-    "http-errors": "^1.7.3",
-    "http-status-codes": "^1.4.0",
-    "statuses": "^1.5.0"
+    "ajv": "^6.12.5",
+    "fastify-plugin": "^2.3.4",
+    "http-errors": "^1.8.0",
+    "http-status-codes": "^2.1.4",
+    "statuses": "^2.0.0"
   },
   "devDependencies": {
-    "@cowtech/eslint-config": "^6.8.4",
-    "@types/http-errors": "^1.6.3",
-    "@types/node": "^13.9.0",
-    "@types/statuses": "^1.5.0",
-    "fastify": "^2.12.1",
-    "prettier": "^1.19.1",
-    "tap": "^14.10.6",
-    "typescript": "^3.8.3"
+    "@cowtech/eslint-config": "^6.9.2",
+    "@types/http-errors": "^1.8.0",
+    "@types/node": "^14.11.2",
+    "@types/statuses": "^2.0.0",
+    "@types/tap": "^14.10.1",
+    "fastify": "^3.4.1",
+    "prettier": "^2.1.2",
+    "tap": "^14.10.8",
+    "typescript": "^4.0.3"
   },
   "engines": {
     "node": ">=12.15.0"

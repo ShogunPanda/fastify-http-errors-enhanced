@@ -1,16 +1,16 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+
 import Ajv from 'ajv'
-import fastify, { FastifyInstance, FastifyReply, FastifyRequest, RegisterOptions, ValidationResult } from 'fastify'
-import { IncomingMessage, Server, ServerResponse } from 'http'
-import { ACCEPTED, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes'
-// @ts-ignore
+import fastify, { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest, ValidationResult } from 'fastify'
+import StatusCodes from 'http-status-codes'
 import t from 'tap'
 import { convertValidationErrors, niceJoin, plugin as fastifyErrorProperties } from '../src'
 
+type Test = typeof t
+
 let server: FastifyInstance | null
 
-async function buildServer(
-  options: RegisterOptions<Server, IncomingMessage, ServerResponse> = {}
-): Promise<FastifyInstance> {
+async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
   if (server) {
     await server.close()
     server = null
@@ -23,7 +23,7 @@ async function buildServer(
   server.get('/correct', {
     schema: {
       response: {
-        [OK]: {
+        [StatusCodes.OK]: {
           type: 'object',
           properties: {
             a: {
@@ -41,7 +41,7 @@ async function buildServer(
   server.get('/bad-code', {
     schema: {
       response: {
-        [OK]: {
+        [StatusCodes.OK]: {
           type: 'object',
           properties: {
             a: {
@@ -51,8 +51,8 @@ async function buildServer(
         }
       }
     },
-    async handler(_r: FastifyRequest, reply: FastifyReply<ServerResponse>): Promise<object> {
-      reply.code(ACCEPTED)
+    async handler(_r: FastifyRequest, reply: FastifyReply): Promise<object> {
+      reply.code(StatusCodes.ACCEPTED)
       return { a: 1 }
     }
   })
@@ -60,7 +60,7 @@ async function buildServer(
   server.get('/bad-body', {
     schema: {
       response: {
-        [OK]: {
+        [StatusCodes.OK]: {
           type: 'object',
           properties: {
             a: {
@@ -83,7 +83,7 @@ async function buildServer(
   server.get('/no-json', {
     schema: {
       response: {
-        [OK]: {
+        [StatusCodes.OK]: {
           type: 'object',
           properties: {
             a: {
@@ -98,9 +98,9 @@ async function buildServer(
         }
       }
     },
-    async handler(_r: FastifyRequest, reply: FastifyReply<ServerResponse>): Promise<string> {
-      reply.code(ACCEPTED)
-      return 'OK'
+    async handler(_r: FastifyRequest, reply: FastifyReply): Promise<string> {
+      reply.code(StatusCodes.ACCEPTED)
+      return 'StatusCodes.OK'
     }
   })
 
@@ -115,8 +115,8 @@ async function buildServer(
   return server
 }
 
-t.test('Validation', (t: any) => {
-  t.test('niceJoin utility method', (t: any) => {
+t.test('Validation', (t: Test) => {
+  t.test('niceJoin utility method', (t: Test) => {
     t.equal(niceJoin([]), '')
     t.equal(niceJoin(['a']), 'a')
     t.equal(niceJoin(['b', 'c'], '@'), 'b@c')
@@ -124,7 +124,7 @@ t.test('Validation', (t: any) => {
     t.end()
   })
 
-  t.test('should correctly parse validation errors', (t: any) => {
+  t.test('should correctly parse validation errors', (t: Test) => {
     const ajv = new Ajv({
       removeAdditional: false,
       useDefaults: true,
@@ -355,41 +355,43 @@ t.test('Validation', (t: any) => {
   t.end()
 })
 
-t.test('Response Validation', (t: any) => {
-  t.afterEach(() => server!.close())
+t.test('Response Validation', (t: Test) => {
+  t.afterEach(async () => {
+    await server!.close()
+  })
 
-  t.test('should allow valid endpoints', async (t: any) => {
+  t.test('should allow valid endpoints', async (t: Test) => {
     await buildServer()
 
     const response = await server!.inject({ method: 'GET', url: '/correct' })
 
-    t.equal(response.statusCode, OK)
+    t.equal(response.statusCode, StatusCodes.OK)
     t.deepEqual(JSON.parse(response.payload), { a: '1' })
   })
 
-  t.test('should validate the response code', async (t: any) => {
+  t.test('should validate the response code', async (t: Test) => {
     await buildServer()
 
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
-    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+    t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
     t.deepEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
-      statusCode: INTERNAL_SERVER_ERROR
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR
     })
   })
 
-  t.test('should validate the response body', async (t: any) => {
+  t.test('should validate the response body', async (t: Test) => {
     await buildServer()
 
     const response = await server!.inject({ method: 'GET', url: '/bad-body' })
 
-    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+    t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
     t.deepEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'The response returned from the endpoint violates its specification for the HTTP status 200.',
-      statusCode: INTERNAL_SERVER_ERROR,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       failedValidations: {
         response: {
           a: 'must be a string',
@@ -400,44 +402,44 @@ t.test('Response Validation', (t: any) => {
     })
   })
 
-  t.test('should allow everything no response schema is defined', async (t: any) => {
+  t.test('should allow everything no response schema is defined', async (t: Test) => {
     await buildServer()
 
     const response = await server!.inject({ method: 'GET', url: '/no-schema' })
 
-    t.equal(response.statusCode, OK)
+    t.equal(response.statusCode, StatusCodes.OK)
     t.deepEqual(JSON.parse(response.payload), { a: 1, c: 2 })
   })
 
-  t.test('should allow everything if the payload is not JSON', async (t: any) => {
+  t.test('should allow everything if the payload is not JSON', async (t: Test) => {
     await buildServer()
 
     const response = await server!.inject({ method: 'GET', url: '/no-json' })
 
-    t.equal(response.statusCode, ACCEPTED)
+    t.equal(response.statusCode, StatusCodes.ACCEPTED)
     t.match(response.headers['content-type'], /^text\/plain/)
-    t.equal(response.payload, 'OK')
+    t.equal(response.payload, 'StatusCodes.OK')
   })
 
-  t.test('should allow everything if explicitily disabled', async (t: any) => {
+  t.test('should allow everything if explicitily disabled', async (t: Test) => {
     await buildServer({ convertResponsesValidationErrors: false })
 
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
-    t.equal(response.statusCode, ACCEPTED)
+    t.equal(response.statusCode, StatusCodes.ACCEPTED)
     t.deepEqual(JSON.parse(response.payload), { a: 1 })
   })
 
-  t.test('should allow everything if explicitily enabled', async (t: any) => {
+  t.test('should allow everything if explicitily enabled', async (t: Test) => {
     await buildServer({ convertResponsesValidationErrors: true })
 
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
-    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+    t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
     t.deepEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
-      statusCode: INTERNAL_SERVER_ERROR
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR
     })
   })
 
