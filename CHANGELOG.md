@@ -1,3 +1,8 @@
+### 2020-09-28 / 1.0.0
+
+- feat: Updated to fastify 3.x.x.
+- chore: Updated CI configuration.
+
 ### 2020-03-09 / 0.7.0
 
 - feat: Improve types, only support Node LTS, replaced jest with tap.
