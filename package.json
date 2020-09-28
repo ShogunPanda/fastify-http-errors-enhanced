@@ -42,7 +42,7 @@
     "statuses": "^2.0.0"
   },
   "devDependencies": {
-    "@cowtech/eslint-config": "^6.9.2",
+    "@cowtech/eslint-config": "^7.10.0",
     "@types/http-errors": "^1.8.0",
     "@types/node": "^14.11.2",
     "@types/statuses": "^2.0.0",
