@@ -80,6 +80,30 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
     }
   })
 
+  server.get('/undeclared-response', {
+    schema: {
+      response: {
+        [StatusCodes.OK]: {
+          type: 'object',
+          properties: {
+            a: {
+              type: 'string'
+            },
+            b: {
+              type: 'string'
+            }
+          },
+          required: ['b'],
+          additionalProperties: false
+        }
+      }
+    },
+    async handler(_r: FastifyRequest, reply: FastifyReply): Promise<object> {
+      reply.code(StatusCodes.ACCEPTED)
+      return { a: 1 }
+    }
+  })
+
   server.get('/no-json', {
     schema: {
       response: {
@@ -409,6 +433,15 @@ t.test('Response Validation', (t: Test) => {
 
     t.equal(response.statusCode, OK)
     t.deepEqual(JSON.parse(response.payload), { a: 1, c: 2 })
+  })
+
+  t.test('should allow responses which are missing in the schema if explicitily enabled', async (t: Test) => {
+    await buildServer({ allowUndeclaredResponses: true })
+
+    const response = await server!.inject({ method: 'GET', url: '/undeclared-response' })
+
+    t.equal(response.statusCode, StatusCodes.ACCEPTED)
+    t.deepEqual(JSON.parse(response.payload), { a: 1 })
   })
 
   t.test('should allow everything if the payload is not JSON', async (t: Test) => {

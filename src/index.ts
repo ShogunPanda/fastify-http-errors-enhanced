@@ -14,8 +14,13 @@ export const plugin = fastifyPlugin(
     const hideUnhandledErrors = options.hideUnhandledErrors ?? isProduction
     const convertValidationErrors = options.convertValidationErrors ?? true
     const convertResponsesValidationErrors = options.convertResponsesValidationErrors ?? !isProduction
+    const allowUndeclaredResponses = options.allowUndeclaredResponses ?? false
 
-    instance.decorateRequest('errorProperties', { hideUnhandledErrors, convertValidationErrors })
+    instance.decorateRequest('errorProperties', {
+      hideUnhandledErrors,
+      convertValidationErrors,
+      allowUndeclaredResponses
+    })
     instance.setErrorHandler(handleErrors)
     instance.setNotFoundHandler(handleNotFoundError)
 

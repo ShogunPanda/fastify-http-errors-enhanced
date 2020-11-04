@@ -8,6 +8,7 @@ declare module 'fastify' {
         errorProperties?: {
             hideUnhandledErrors?: boolean;
             convertValidationErrors?: boolean;
+            allowUndeclaredResponses?: boolean;
         };
     }
 }
