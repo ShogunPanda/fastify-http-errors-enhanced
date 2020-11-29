@@ -1,3 +1,9 @@
+### 2020-11-22 / 2.0.0
+
+- feat: Renamed to `fastify-http-errors-enhanced`.
+- feat: Dropped all error related depedencies in favor of `http-errors-enhanced`.
+- feat: Removed `addAdditionalProperties` and `serializeError` which can now be found in `http-errors-enhanced`.
+
 ### 2020-09-28 / 1.0.0
 
 - feat: Updated to fastify 3.x.x.
@@ -49,4 +55,3 @@
 
 - chore: Rebuild.
 - feat: Extract errors to another module.
-

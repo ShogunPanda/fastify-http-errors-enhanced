@@ -1,17 +1,24 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
-import createError, { HttpError, InternalServerError, NotFound } from 'http-errors'
-import StatusCodes from 'http-status-codes'
-import statuses from 'statuses'
+import {
+  addAdditionalProperties,
+  BadRequestError,
+  HttpError,
+  InternalServerError,
+  INTERNAL_SERVER_ERROR,
+  messagesByCodes,
+  NotFoundError,
+  serializeError,
+  UnsupportedMediaTypeError
+} from 'http-errors-enhanced'
 import { GenericObject, NodeError, RequestSection } from './interfaces'
-import { addAdditionalProperties, serializeError } from './properties'
 import { upperFirst } from './utils'
 import { convertValidationErrors, validationMessagesFormatters } from './validation'
 
 export function handleNotFoundError(request: FastifyRequest, reply: FastifyReply): void {
-  handleErrors(new NotFound('Not found.'), request, reply)
+  handleErrors(new NotFoundError('Not found.'), request, reply)
 }
 
-export function handleValidationError(error: FastifyError, request: FastifyRequest): HttpError {
+export function handleValidationError(error: FastifyError, request: FastifyRequest): Error {
   /*
     As seen in https://github.com/fastify/fastify/blob/master/lib/validation.js
     the error.message will  always start with the relative section (params, querystring, headers, body)
@@ -19,34 +26,34 @@ export function handleValidationError(error: FastifyError, request: FastifyReque
   */
   const section = error.message.match(/^\w+/)![0] as RequestSection
 
-  return createError(StatusCodes.BAD_REQUEST, 'One or more validations failed trying to process your request.', {
+  return new BadRequestError('One or more validations failed trying to process your request.', {
     failedValidations: convertValidationErrors(section, Reflect.get(request, section), error.validation!)
   })
 }
 
-export function handleErrors(error: FastifyError | HttpError, request: FastifyRequest, reply: FastifyReply): void {
+export function handleErrors(error: FastifyError | Error, request: FastifyRequest, reply: FastifyReply): void {
   // It is a generic error, handle it
   const code = (error as NodeError).code
 
   if (!('statusCode' in error)) {
     if ('validation' in error && request.errorProperties?.convertValidationErrors) {
       // If it is a validation error, convert errors to human friendly format
-      error = handleValidationError(error as FastifyError, request)
+      error = handleValidationError(error, request)
     } else if (request.errorProperties?.hideUnhandledErrors) {
       // It is requested to hide the error, just log it and then create a generic one
       request.log.error({ error: serializeError(error) })
       error = new InternalServerError('An error occurred trying to process your request.')
     } else {
-      // Wrap in a http-error, making the stack explicitily available
-      error = Object.assign(new InternalServerError(error.message), serializeError(error))
+      // Wrap in a HttpError, making the stack explicitily available
+      error = new InternalServerError(serializeError(error))
       Object.defineProperty(error, 'stack', { enumerable: true })
     }
   } else if (code === 'INVALID_CONTENT_TYPE' || code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE') {
-    error = createError(StatusCodes.UNSUPPORTED_MEDIA_TYPE, upperFirst(validationMessagesFormatters.contentType()))
+    error = new UnsupportedMediaTypeError(upperFirst(validationMessagesFormatters.contentType()))
   } else if (code === 'FST_ERR_CTP_EMPTY_JSON_BODY') {
-    error = createError(StatusCodes.BAD_REQUEST, upperFirst(validationMessagesFormatters.jsonEmpty()))
+    error = new BadRequestError(upperFirst(validationMessagesFormatters.jsonEmpty()))
   } else if (code === 'MALFORMED_JSON' || error.message === 'Invalid JSON' || error.stack!.includes('at JSON.parse')) {
-    error = createError(StatusCodes.BAD_REQUEST, upperFirst(validationMessagesFormatters.json()))
+    error = new BadRequestError(upperFirst(validationMessagesFormatters.json()))
   }
 
   // Get the status code
@@ -54,14 +61,13 @@ export function handleErrors(error: FastifyError | HttpError, request: FastifyRe
 
   // Code outside HTTP range
   if (statusCode < 100 || statusCode > 599) {
-    statusCode = StatusCodes.INTERNAL_SERVER_ERROR
+    statusCode = INTERNAL_SERVER_ERROR
   }
 
   // Create the body
   const body: GenericObject = {
     statusCode,
-    code: (error as NodeError).code,
-    error: statuses(statusCode.toString()),
+    error: messagesByCodes[statusCode],
     message: error.message
   }
 

@@ -1,8 +1,6 @@
 /// <reference types="node" />
-import { FastifyPluginOptions } from 'fastify';
 export * from './handlers';
 export * from './interfaces';
-export { addAdditionalProperties, serializeError } from './properties';
 export { convertValidationErrors, niceJoin, validationMessagesFormatters } from './validation';
-export declare const plugin: import("fastify").FastifyPluginCallback<FastifyPluginOptions, import("http").Server>;
+export declare const plugin: import("fastify").FastifyPluginCallback<Record<string, any>, import("http").Server>;
 export default plugin;

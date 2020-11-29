@@ -1,20 +1,20 @@
-# fastify-errors-properties
+# fastify-http-errors-enhanced
 
-[![Package Version](https://img.shields.io/npm/v/fastify-errors-properties.svg)](https://npm.im/fastify-errors-properties)
-[![Dependency Status](https://img.shields.io/david/ShogunPanda/fastify-errors-properties)](https://david-dm.org/ShogunPanda/fastify-errors-properties)
-[![Build](https://github.com/ShogunPanda/fastify-errors-properties/workflows/CI/badge.svg)](https://github.com/ShogunPanda/fastify-errors-properties/actions?query=workflow%3ACI)
-[![Code Coverage](https://img.shields.io/codecov/c/gh/ShogunPanda/fastify-errors-properties?token=d0ae1643f35c4c4f9714a357f796d05d)](https://codecov.io/gh/ShogunPanda/fastify-errors-properties)
+[![Package Version](https://img.shields.io/npm/v/fastify-http-errors-enhanced.svg)](https://npm.im/fastify-http-errors-enhanced)
+[![Dependency Status](https://img.shields.io/david/ShogunPanda/fastify-http-errors-enhanced)](https://david-dm.org/ShogunPanda/fastify-http-errors-enhanced)
+[![Build](https://github.com/ShogunPanda/fastify-http-errors-enhanced/workflows/CI/badge.svg)](https://github.com/ShogunPanda/fastify-http-errors-enhanced/actions?query=workflow%3ACI)
+[![Code Coverage](https://img.shields.io/codecov/c/gh/ShogunPanda/fastify-http-errors-enhanced?token=d0ae1643f35c4c4f9714a357f796d05d)](https://codecov.io/gh/ShogunPanda/fastify-http-errors-enhanced)
 
-A error handling plugin for Fastify that enables additional properties in errors.
+A error handling plugin for Fastify that uses enhanced HTTP errors.
 
-http://sw.cowtech.it/fastify-errors-properties
+http://sw.cowtech.it/fastify-http-errors-enhanced
 
 ## Installation
 
 Just run:
 
 ```bash
-npm install fastify-errors-properties --save
+npm install fastify-http-errors-enhanced --save
 ```
 
 ## Usage
@@ -46,10 +46,10 @@ To clarify, take this server as a example:
 const server = require('fastify')()
 const createError = require('http-errors')
 
-server.register(require('fastify-errors-properties'))
+server.register(require('fastify-http-errors-enhanced'))
 
 server.get('/invalid', {
-  handler: async function(request, reply) {
+  handler: async function (request, reply) {
     throw createError(404, 'You are not supposed to reach this.', { header: { 'X-Req-Id': request.id, id: 123 } })
   }
 })
@@ -98,10 +98,10 @@ To clarify, take this server as a example:
 const server = require('fastify')()
 const createError = require('http-errors')
 
-server.register(require('fastify-errors-properties'), { hideUnhandledErrors: false })
+server.register(require('fastify-http-errors-enhanced'), { hideUnhandledErrors: false })
 
 server.get('/invalid', {
-  handler: function(request, reply) {
+  handler: function (request, reply) {
     const error = new Error('This was not supposed to happen.')
     error.id = 123
     throw error
@@ -159,7 +159,7 @@ Example of a response validation error:
 }
 ```
 
-## Contributing to fastify-errors-properties
+## Contributing to fastify-http-errors-enhanced
 
 - Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet.
 - Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it.

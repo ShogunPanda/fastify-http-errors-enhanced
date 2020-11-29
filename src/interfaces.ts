@@ -11,13 +11,6 @@ declare module 'fastify' {
       convertValidationErrors?: boolean
     }
   }
-
-  interface FastifyReply {
-    originalResponse?: {
-      statusCode: number
-      payload: any
-    }
-  }
 }
 
 export interface GenericObject {

@@ -1,6 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions, ValidationResult } from 'fastify'
-import createError from 'http-errors'
-import StatusCodes from 'http-status-codes'
+import { InternalServerError, INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
 import { RequestSection, ResponseSchemas, ValidationFormatter, Validations } from './interfaces'
 import { get } from './utils'
 
@@ -209,7 +208,7 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
     const statusCode = reply.raw.statusCode
 
     // Never validate error 500
-    if (statusCode === StatusCodes.INTERNAL_SERVER_ERROR) {
+    if (statusCode === INTERNAL_SERVER_ERROR) {
       return payload
     }
 
@@ -217,14 +216,14 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
     const validator = validators[statusCode]
 
     if (!validator) {
-      throw createError(StatusCodes.INTERNAL_SERVER_ERROR, validationMessagesFormatters.invalidResponseCode(statusCode))
+      throw new InternalServerError(validationMessagesFormatters.invalidResponseCode(statusCode))
     }
 
     // Now validate the payload
     const valid = validator(payload)
 
     if (!valid) {
-      throw createError(StatusCodes.INTERNAL_SERVER_ERROR, validationMessagesFormatters.invalidResponse(statusCode), {
+      throw new InternalServerError(validationMessagesFormatters.invalidResponse(statusCode), {
         failedValidations: convertValidationErrors('response', payload, validator.errors as Array<ValidationResult>)
       })
     }

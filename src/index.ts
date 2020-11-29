@@ -6,7 +6,6 @@ import { addResponseValidation } from './validation'
 
 export * from './handlers'
 export * from './interfaces'
-export { addAdditionalProperties, serializeError } from './properties'
 export { convertValidationErrors, niceJoin, validationMessagesFormatters } from './validation'
 
 export const plugin = fastifyPlugin(
@@ -38,7 +37,7 @@ export const plugin = fastifyPlugin(
 
     done()
   },
-  { name: 'fastify-errors-properties' }
+  { name: 'fastify-http-errors-enhanced' }
 )
 
 export default plugin

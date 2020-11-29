@@ -2,7 +2,7 @@
 
 import Ajv from 'ajv'
 import fastify, { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest, ValidationResult } from 'fastify'
-import StatusCodes from 'http-status-codes'
+import { ACCEPTED, INTERNAL_SERVER_ERROR, OK } from 'http-errors-enhanced'
 import t from 'tap'
 import { convertValidationErrors, niceJoin, plugin as fastifyErrorProperties } from '../src'
 
@@ -23,7 +23,7 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
   server.get('/correct', {
     schema: {
       response: {
-        [StatusCodes.OK]: {
+        [OK]: {
           type: 'object',
           properties: {
             a: {
@@ -41,7 +41,7 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
   server.get('/bad-code', {
     schema: {
       response: {
-        [StatusCodes.OK]: {
+        [OK]: {
           type: 'object',
           properties: {
             a: {
@@ -52,7 +52,7 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
       }
     },
     async handler(_r: FastifyRequest, reply: FastifyReply): Promise<object> {
-      reply.code(StatusCodes.ACCEPTED)
+      reply.code(ACCEPTED)
       return { a: 1 }
     }
   })
@@ -60,7 +60,7 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
   server.get('/bad-body', {
     schema: {
       response: {
-        [StatusCodes.OK]: {
+        [OK]: {
           type: 'object',
           properties: {
             a: {
@@ -83,7 +83,7 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
   server.get('/no-json', {
     schema: {
       response: {
-        [StatusCodes.OK]: {
+        [OK]: {
           type: 'object',
           properties: {
             a: {
@@ -99,8 +99,8 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
       }
     },
     async handler(_r: FastifyRequest, reply: FastifyReply): Promise<string> {
-      reply.code(StatusCodes.ACCEPTED)
-      return 'StatusCodes.OK'
+      reply.code(ACCEPTED)
+      return 'ACCEPTED'
     }
   })
 
@@ -365,7 +365,7 @@ t.test('Response Validation', (t: Test) => {
 
     const response = await server!.inject({ method: 'GET', url: '/correct' })
 
-    t.equal(response.statusCode, StatusCodes.OK)
+    t.equal(response.statusCode, OK)
     t.deepEqual(JSON.parse(response.payload), { a: '1' })
   })
 
@@ -374,11 +374,11 @@ t.test('Response Validation', (t: Test) => {
 
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
-    t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
+    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
     t.deepEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+      statusCode: INTERNAL_SERVER_ERROR
     })
   })
 
@@ -387,11 +387,11 @@ t.test('Response Validation', (t: Test) => {
 
     const response = await server!.inject({ method: 'GET', url: '/bad-body' })
 
-    t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
+    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
     t.deepEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'The response returned from the endpoint violates its specification for the HTTP status 200.',
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      statusCode: INTERNAL_SERVER_ERROR,
       failedValidations: {
         response: {
           a: 'must be a string',
@@ -407,7 +407,7 @@ t.test('Response Validation', (t: Test) => {
 
     const response = await server!.inject({ method: 'GET', url: '/no-schema' })
 
-    t.equal(response.statusCode, StatusCodes.OK)
+    t.equal(response.statusCode, OK)
     t.deepEqual(JSON.parse(response.payload), { a: 1, c: 2 })
   })
 
@@ -416,9 +416,9 @@ t.test('Response Validation', (t: Test) => {
 
     const response = await server!.inject({ method: 'GET', url: '/no-json' })
 
-    t.equal(response.statusCode, StatusCodes.ACCEPTED)
+    t.equal(response.statusCode, ACCEPTED)
     t.match(response.headers['content-type'], /^text\/plain/)
-    t.equal(response.payload, 'StatusCodes.OK')
+    t.equal(response.payload, 'ACCEPTED')
   })
 
   t.test('should allow everything if explicitily disabled', async (t: Test) => {
@@ -426,7 +426,7 @@ t.test('Response Validation', (t: Test) => {
 
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
-    t.equal(response.statusCode, StatusCodes.ACCEPTED)
+    t.equal(response.statusCode, ACCEPTED)
     t.deepEqual(JSON.parse(response.payload), { a: 1 })
   })
 
@@ -435,11 +435,11 @@ t.test('Response Validation', (t: Test) => {
 
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
-    t.equal(response.statusCode, StatusCodes.INTERNAL_SERVER_ERROR)
+    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
     t.deepEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+      statusCode: INTERNAL_SERVER_ERROR
     })
   })
 
