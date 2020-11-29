@@ -32,7 +32,6 @@ The handler response format will compatible with standard fastify error response
 ```typescript
 {
   statusCode: number
-  code?: string
   error: string
   message: string
 }
@@ -44,13 +43,13 @@ To clarify, take this server as a example:
 
 ```js
 const server = require('fastify')()
-const createError = require('http-errors')
+const { NotFoundError } = require('http-errors-enhanced')
 
 server.register(require('fastify-http-errors-enhanced'))
 
 server.get('/invalid', {
   handler: async function (request, reply) {
-    throw createError(404, 'You are not supposed to reach this.', { header: { 'X-Req-Id': request.id, id: 123 } })
+    throw new NotFoundError('You are not supposed to reach this.', { header: { 'X-Req-Id': request.id, id: 123 } })
   }
 })
 
