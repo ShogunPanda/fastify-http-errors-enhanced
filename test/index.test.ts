@@ -53,6 +53,14 @@ function routes(instance: FastifyInstance, _options: unknown, done: Callback): v
     }
   })
 
+  instance.get('/error-with-code', {
+    async handler(): Promise<void> {
+      const error = createError(BAD_GATEWAY, 'This was the error message.', { code: 'CODE' })
+
+      throw error
+    }
+  })
+
   instance.get('/weird-code', {
     async handler(): Promise<void> {
       const error = new BadGatewayError('This was the error message.')
@@ -230,6 +238,20 @@ t.test('Plugin', (t: Test) => {
         error: 'Bad Gateway',
         message: 'This was the error message.',
         statusCode: BAD_GATEWAY
+      })
+    })
+
+    t.test('should correctly return error codes when not starting with the prefix', async (t: Test) => {
+      await buildServer()
+
+      const response = await server!.inject({ method: 'GET', url: '/error-with-code' })
+
+      t.equal(response.statusCode, BAD_GATEWAY)
+      t.deepEqual(JSON.parse(response.payload), {
+        error: 'Bad Gateway',
+        message: 'This was the error message.',
+        statusCode: BAD_GATEWAY,
+        code: 'CODE'
       })
     })
 
@@ -569,7 +591,8 @@ t.test('Plugin', (t: Test) => {
       t.deepEqual(payload, {
         error: 'Internal Server Error',
         message: '[CODE] This was a generic message.',
-        statusCode: INTERNAL_SERVER_ERROR
+        statusCode: INTERNAL_SERVER_ERROR,
+        code: 'CODE'
       })
     })
 
@@ -581,7 +604,6 @@ t.test('Plugin', (t: Test) => {
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
 
       const payload = JSON.parse(response.payload)
-      console.log(JSON.stringify(payload, null, 2))
       t.match(payload.stack[1], /wrapValidationError \(\$ROOT\/node_modules\/fastify\/.+:\d+:\d+\)/)
       delete payload.stack
 

@@ -37,6 +37,7 @@ The handler response format will compatible with standard fastify error response
 }
 ```
 
+If the original error's `code` properties does not start with `HTTP_ERROR_` ([http-errors-enhanced](https://github.com/ShogunPanda/http-errors-enhanced) standard error prefix), then the `code` is also included in output object.
 In addition, the response headers will contain all headers defined in `error.headers` and the response body will contain all additional enumerable properties of the error.
 
 To clarify, take this server as a example:
@@ -49,7 +50,10 @@ server.register(require('fastify-http-errors-enhanced'))
 
 server.get('/invalid', {
   handler: async function (request, reply) {
-    throw new NotFoundError('You are not supposed to reach this.', { header: { 'X-Req-Id': request.id, id: 123 } })
+    throw new NotFoundError('You are not supposed to reach this.', {
+      header: { 'X-Req-Id': request.id, id: 123 },
+      code: 'UNREACHABLE'
+    })
   }
 })
 
@@ -65,6 +69,7 @@ When hitting `/invalid` it will return the following:
 ```json
 {
   "error": "Not Found",
+  "code": "UNREACHABLE",
   "message": "You are not supposed to reach this.",
   "statusCode": 404,
   "id": 123
