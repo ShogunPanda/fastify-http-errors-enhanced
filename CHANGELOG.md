@@ -1,3 +1,9 @@
+### 2020-11-30 / 2.2.0
+
+- feat: Merge pull request #4 from ShogunPanda/undeclared-response
+- chore: Fix CI.
+- feat: Add allowUndeclaredResponses option.
+
 ### 2020-11-30 / 2.1.0
 
 - feat: Output code property when it doesn't start with standard prefix.
