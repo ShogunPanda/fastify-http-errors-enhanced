@@ -83,7 +83,7 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
   server.get('/undeclared-response', {
     schema: {
       response: {
-        [StatusCodes.OK]: {
+        [OK]: {
           type: 'object',
           properties: {
             a: {
@@ -99,7 +99,7 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
       }
     },
     async handler(_r: FastifyRequest, reply: FastifyReply): Promise<object> {
-      reply.code(StatusCodes.ACCEPTED)
+      reply.code(ACCEPTED)
       return { a: 1 }
     }
   })
@@ -440,7 +440,7 @@ t.test('Response Validation', (t: Test) => {
 
     const response = await server!.inject({ method: 'GET', url: '/undeclared-response' })
 
-    t.equal(response.statusCode, StatusCodes.ACCEPTED)
+    t.equal(response.statusCode, ACCEPTED)
     t.deepEqual(JSON.parse(response.payload), { a: 1 })
   })
 
