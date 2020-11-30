@@ -24,6 +24,7 @@ Register as a plugin, optional providing any of the following options:
 - `hideUnhandledErrors`: If to hide unhandled server errors or returning to the client including stack information. Default is to hide errors when `NODE_ENV` environment variable is `production`.
 - `convertValidationErrors`: Convert validation errors to a structured human readable object. Default is `true`.
 - `convertResponsesValidationErrors`: Convert response validation errors to a structured human readable object. Default is to enable when `NODE_ENV` environment variable is different from `production`.
+- `allowUndeclaredResponses`: When converting response validation errors, allow responses that have no schema defined instead of throwing an error.
 
 Once registered, the server will use the plugin handlers for all errors (basically, both `setErrorHandler` and `setNotFoundHandler` are called).
 
@@ -105,7 +106,7 @@ const createError = require('http-errors')
 server.register(require('fastify-http-errors-enhanced'), { hideUnhandledErrors: false })
 
 server.get('/invalid', {
-  handler: function (request, reply) {
+  handler(request, reply) {
     const error = new Error('This was not supposed to happen.')
     error.id = 123
     throw error

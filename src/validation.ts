@@ -201,7 +201,7 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
   // Note that this hook is not called for non JSON payloads therefore validation is not possible in such cases
   route.preSerialization = async function (
     this: FastifyInstance,
-    _request: FastifyRequest,
+    request: FastifyRequest,
     reply: FastifyReply,
     payload: any
   ): Promise<any> {
@@ -216,6 +216,10 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
     const validator = validators[statusCode]
 
     if (!validator) {
+      if (request.errorProperties!.allowUndeclaredResponses) {
+        return payload
+      }
+
       throw new InternalServerError(validationMessagesFormatters.invalidResponseCode(statusCode))
     }
 
