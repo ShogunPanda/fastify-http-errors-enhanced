@@ -1,3 +1,8 @@
+### 2020-11-30 / 2.1.0
+
+- feat: Output code property when it doesn't start with standard prefix.
+- chore: Updated README.
+
 ### 2020-11-22 / 2.0.0
 
 - feat: Renamed to `fastify-http-errors-enhanced`.
