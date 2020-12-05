@@ -1,10 +1,12 @@
 import { Ajv, ValidateFunction } from 'ajv'
 
 declare module 'fastify' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface FastifyInstance {
     responseValidatorSchemaCompiler: Ajv
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface FastifyRequest {
     errorProperties?: {
       hideUnhandledErrors?: boolean
