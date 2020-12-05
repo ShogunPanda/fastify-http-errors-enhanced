@@ -1,3 +1,7 @@
+### 2020-12-05 / 2.2.1
+
+- chore: Update dependencies.
+
 ### 2020-11-30 / 2.2.0
 
 - feat: Merge pull request #4 from ShogunPanda/undeclared-response
