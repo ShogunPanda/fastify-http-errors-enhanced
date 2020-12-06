@@ -1,3 +1,7 @@
+### 2020-12-06 / 2.3.0
+
+- feat: Support shared schema in responses validation.
+
 ### 2020-12-05 / 2.2.1
 
 - chore: Update dependencies.
