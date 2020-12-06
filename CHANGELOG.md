@@ -1,3 +1,7 @@
+### 2020-12-06 / 2.3.1
+
+- fix: Consider schema encapsulation.
+
 ### 2020-12-06 / 2.3.0
 
 - feat: Support shared schema in responses validation.
