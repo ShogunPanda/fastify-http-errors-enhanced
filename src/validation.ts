@@ -208,6 +208,7 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
     This makes possible to handle shared schemas.
   */
   this[kHttpErrorsEnhancedResponseValidations].push([
+    this,
     validators,
     Object.entries(route.schema.response as { [key: string]: object })
   ])
@@ -251,20 +252,20 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
 }
 
 export function compileResponseValidationSchema(this: FastifyInstance): void {
-  const validator = new Ajv({
-    // The fastify defaults, with the exception of removeAdditional and coerceTypes, which have been reversed
-    removeAdditional: false,
-    useDefaults: true,
-    coerceTypes: false,
-    allErrors: true,
-    nullable: true
-  })
+  for (const [instance, validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
+    const compiler = new Ajv({
+      // The fastify defaults, with the exception of removeAdditional and coerceTypes, which have been reversed
+      removeAdditional: false,
+      useDefaults: true,
+      coerceTypes: false,
+      allErrors: true,
+      nullable: true
+    })
 
-  validator.addSchema(Object.values(this.getSchemas()))
+    compiler.addSchema(Object.values(instance.getSchemas()))
 
-  for (const [validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
     for (const [code, schema] of schemas) {
-      validators[code] = validator.compile(schema)
+      validators[code] = compiler.compile(schema)
     }
   }
 }

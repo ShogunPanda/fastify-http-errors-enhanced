@@ -7,7 +7,8 @@ declare module 'fastify' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface FastifyInstance {
     responseValidatorSchemaCompiler: Ajv
-    [kHttpErrorsEnhancedResponseValidations]: Array<[ResponseSchemas, Array<[string, object]>]>
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    [kHttpErrorsEnhancedResponseValidations]: Array<[FastifyInstance, ResponseSchemas, Array<[string, object]>]>
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

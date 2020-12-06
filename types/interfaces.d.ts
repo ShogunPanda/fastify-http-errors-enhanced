@@ -5,7 +5,7 @@ export declare const kHttpErrorsEnhancedResponseValidations: unique symbol;
 declare module 'fastify' {
     interface FastifyInstance {
         responseValidatorSchemaCompiler: Ajv;
-        [kHttpErrorsEnhancedResponseValidations]: Array<[ResponseSchemas, Array<[string, object]>]>;
+        [kHttpErrorsEnhancedResponseValidations]: Array<[FastifyInstance, ResponseSchemas, Array<[string, object]>]>;
     }
     interface FastifyRequest {
         [kHttpErrorsEnhancedProperties]?: {
