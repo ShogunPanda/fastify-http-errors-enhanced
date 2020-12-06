@@ -1,14 +1,18 @@
 import { Ajv, ValidateFunction } from 'ajv'
 
+export const kHttpErrorsEnhancedProperties = Symbol('fastify-http-errors-enhanced-properties')
+export const kHttpErrorsEnhancedResponseValidations = Symbol('fastify-http-errors-enhanced-response-validation')
+
 declare module 'fastify' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface FastifyInstance {
     responseValidatorSchemaCompiler: Ajv
+    [kHttpErrorsEnhancedResponseValidations]: Array<[ResponseSchemas, Array<[string, object]>]>
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface FastifyRequest {
-    errorProperties?: {
+    [kHttpErrorsEnhancedProperties]?: {
       hideUnhandledErrors?: boolean
       convertValidationErrors?: boolean
       allowUndeclaredResponses?: boolean

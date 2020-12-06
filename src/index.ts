@@ -1,8 +1,8 @@
-import Ajv from 'ajv'
 import { FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
 import { handleErrors, handleNotFoundError } from './handlers'
-import { addResponseValidation } from './validation'
+import { kHttpErrorsEnhancedProperties, kHttpErrorsEnhancedResponseValidations } from './interfaces'
+import { addResponseValidation, compileResponseValidationSchema } from './validation'
 
 export * from './handlers'
 export * from './interfaces'
@@ -16,7 +16,7 @@ export const plugin = fastifyPlugin(
     const convertResponsesValidationErrors = options.convertResponsesValidationErrors ?? !isProduction
     const allowUndeclaredResponses = options.allowUndeclaredResponses ?? false
 
-    instance.decorateRequest('errorProperties', {
+    instance.decorateRequest(kHttpErrorsEnhancedProperties, {
       hideUnhandledErrors,
       convertValidationErrors,
       allowUndeclaredResponses
@@ -25,19 +25,10 @@ export const plugin = fastifyPlugin(
     instance.setNotFoundHandler(handleNotFoundError)
 
     if (convertResponsesValidationErrors) {
-      instance.decorate(
-        'responseValidatorSchemaCompiler',
-        new Ajv({
-          // The fastify defaults, with the exception of removeAdditional and coerceTypes, which have been reversed
-          removeAdditional: false,
-          useDefaults: true,
-          coerceTypes: false,
-          allErrors: true,
-          nullable: true
-        })
-      )
+      instance.decorate(kHttpErrorsEnhancedResponseValidations, [])
 
       instance.addHook('onRoute', addResponseValidation)
+      instance.addHook('onReady', compileResponseValidationSchema)
     }
 
     done()

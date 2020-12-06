@@ -10,7 +10,7 @@ import {
   serializeError,
   UnsupportedMediaTypeError
 } from 'http-errors-enhanced'
-import { GenericObject, NodeError, RequestSection } from './interfaces'
+import { GenericObject, kHttpErrorsEnhancedProperties, NodeError, RequestSection } from './interfaces'
 import { upperFirst } from './utils'
 import { convertValidationErrors, validationMessagesFormatters } from './validation'
 
@@ -36,10 +36,10 @@ export function handleErrors(error: FastifyError | Error, request: FastifyReques
   const code = (error as NodeError).code
 
   if (!('statusCode' in error)) {
-    if ('validation' in error && request.errorProperties?.convertValidationErrors) {
+    if ('validation' in error && request[kHttpErrorsEnhancedProperties]?.convertValidationErrors) {
       // If it is a validation error, convert errors to human friendly format
       error = handleValidationError(error, request)
-    } else if (request.errorProperties?.hideUnhandledErrors) {
+    } else if (request[kHttpErrorsEnhancedProperties]?.hideUnhandledErrors) {
       // It is requested to hide the error, just log it and then create a generic one
       request.log.error({ error: serializeError(error) })
       error = new InternalServerError('An error occurred trying to process your request.')

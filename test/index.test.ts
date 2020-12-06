@@ -11,7 +11,7 @@ import {
   UNSUPPORTED_MEDIA_TYPE
 } from 'http-errors-enhanced'
 import t from 'tap'
-import { handleErrors, plugin as fastifyErrorProperties } from '../src'
+import { handleErrors, plugin as fastifyHttpErrorsEnhanced } from '../src'
 
 type Test = typeof t
 type Callback = () => void
@@ -144,11 +144,6 @@ function routes(instance: FastifyInstance, _options: unknown, done: Callback): v
 }
 
 async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
-  if (server) {
-    await server.close()
-    server = null
-  }
-
   server = fastify({
     ajv: {
       customOptions: {
@@ -161,19 +156,13 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
     }
   })
 
-  server.register(fastifyErrorProperties, options)
+  server.register(fastifyHttpErrorsEnhanced, options)
   server.register(routes)
-  await server.listen(0)
 
   return server
 }
 
 async function buildStandaloneServer(): Promise<FastifyInstance> {
-  if (standaloneServer) {
-    await standaloneServer.close()
-    standaloneServer = null
-  }
-
   standaloneServer = fastify()
 
   standaloneServer.setErrorHandler(handleErrors)
@@ -203,17 +192,11 @@ async function buildStandaloneServer(): Promise<FastifyInstance> {
     }
   })
 
-  await standaloneServer.listen(0)
-
   return standaloneServer
 }
 
 t.test('Plugin', (t: Test) => {
   t.test('Handling http-errors', (t: Test) => {
-    t.afterEach(async () => {
-      await server!.close()
-    })
-
     t.test('should correctly return client errors', async (t: Test) => {
       await buildServer()
 
@@ -327,10 +310,6 @@ t.test('Plugin', (t: Test) => {
   })
 
   t.test('Handling generic errors', (t: Test) => {
-    t.afterEach(async () => {
-      await server!.close()
-    })
-
     t.test(
       'should correctly return generic errors by wrapping them in a 500 http-error, including headers and properties',
       async (t: Test) => {
@@ -446,10 +425,6 @@ t.test('Plugin', (t: Test) => {
   })
 
   t.test('Handling validation errors', (t: Test) => {
-    t.afterEach(async () => {
-      await server!.close()
-    })
-
     t.test('should validate params', async (t: Test) => {
       await buildServer()
 
@@ -555,11 +530,7 @@ t.test('Plugin', (t: Test) => {
   })
 
   t.test('Using standalone error handling', (t: Test) => {
-    t.afterEach(async () => {
-      await standaloneServer!.close()
-    })
-
-    t.test('should not return the errorProperties by never masking server side errors', async (t: Test) => {
+    t.test("should not return the error's properties by masking server side errors", async (t: Test) => {
       await buildStandaloneServer()
 
       const response = await standaloneServer!.inject({ method: 'GET', url: '/error/123' })

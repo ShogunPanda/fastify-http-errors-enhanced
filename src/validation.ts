@@ -1,6 +1,14 @@
+import Ajv from 'ajv'
 import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions, ValidationResult } from 'fastify'
 import { InternalServerError, INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
-import { RequestSection, ResponseSchemas, ValidationFormatter, Validations } from './interfaces'
+import {
+  kHttpErrorsEnhancedProperties,
+  kHttpErrorsEnhancedResponseValidations,
+  RequestSection,
+  ResponseSchemas,
+  ValidationFormatter,
+  Validations
+} from './interfaces'
 import { get } from './utils'
 
 export function niceJoin(array: Array<string>, lastSeparator: string = ' and ', separator: string = ', '): string {
@@ -194,9 +202,15 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
   }
 
   const validators: ResponseSchemas = {}
-  for (const [code, schema] of Object.entries(route.schema.response as { [key: string]: object })) {
-    validators[code] = this.responseValidatorSchemaCompiler.compile(schema)
-  }
+
+  /*
+    Add these validators to the list of the one to compile once the server is started.
+    This makes possible to handle shared schemas.
+  */
+  this[kHttpErrorsEnhancedResponseValidations].push([
+    validators,
+    Object.entries(route.schema.response as { [key: string]: object })
+  ])
 
   // Note that this hook is not called for non JSON payloads therefore validation is not possible in such cases
   route.preSerialization = async function (
@@ -216,7 +230,7 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
     const validator = validators[statusCode]
 
     if (!validator) {
-      if (request.errorProperties!.allowUndeclaredResponses) {
+      if (request[kHttpErrorsEnhancedProperties]!.allowUndeclaredResponses) {
         return payload
       }
 
@@ -233,5 +247,24 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
     }
 
     return payload
+  }
+}
+
+export function compileResponseValidationSchema(this: FastifyInstance): void {
+  const validator = new Ajv({
+    // The fastify defaults, with the exception of removeAdditional and coerceTypes, which have been reversed
+    removeAdditional: false,
+    useDefaults: true,
+    coerceTypes: false,
+    allErrors: true,
+    nullable: true
+  })
+
+  validator.addSchema(Object.values(this.getSchemas()))
+
+  for (const [validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
+    for (const [code, schema] of schemas) {
+      validators[code] = validator.compile(schema)
+    }
   }
 }

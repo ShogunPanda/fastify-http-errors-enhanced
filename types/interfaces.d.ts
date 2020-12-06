@@ -1,11 +1,14 @@
 /// <reference types="node" />
 import { Ajv, ValidateFunction } from 'ajv';
+export declare const kHttpErrorsEnhancedProperties: unique symbol;
+export declare const kHttpErrorsEnhancedResponseValidations: unique symbol;
 declare module 'fastify' {
     interface FastifyInstance {
         responseValidatorSchemaCompiler: Ajv;
+        [kHttpErrorsEnhancedResponseValidations]: Array<[ResponseSchemas, Array<[string, object]>]>;
     }
     interface FastifyRequest {
-        errorProperties?: {
+        [kHttpErrorsEnhancedProperties]?: {
             hideUnhandledErrors?: boolean;
             convertValidationErrors?: boolean;
             allowUndeclaredResponses?: boolean;

@@ -11,13 +11,7 @@ type Test = typeof t
 let server: FastifyInstance | null
 
 async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
-  if (server) {
-    await server.close()
-    server = null
-  }
-
   server = fastify()
-
   server.register(fastifyErrorProperties, options)
 
   server.get('/correct', {
@@ -133,8 +127,6 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
       return { a: 1, c: 2 }
     }
   })
-
-  await server.listen(0)
 
   return server
 }
@@ -380,10 +372,6 @@ t.test('Validation', (t: Test) => {
 })
 
 t.test('Response Validation', (t: Test) => {
-  t.afterEach(async () => {
-    await server!.close()
-  })
-
   t.test('should allow valid endpoints', async (t: Test) => {
     await buildServer()
 
@@ -423,6 +411,42 @@ t.test('Response Validation', (t: Test) => {
           c: 'is not a valid property'
         }
       }
+    })
+  })
+
+  t.test('should support shared schema', async (t: Test) => {
+    const sharedServer = fastify()
+
+    sharedServer.register(fastifyErrorProperties, { convertResponsesValidationErrors: true })
+    sharedServer.addSchema({
+      $id: '#ok',
+      type: 'object',
+      properties: {
+        a: {
+          type: 'string'
+        }
+      }
+    })
+
+    sharedServer.get('/bad-code', {
+      schema: {
+        response: {
+          [OK]: { $ref: '#ok' }
+        }
+      },
+      async handler(_r: FastifyRequest, reply: FastifyReply): Promise<object> {
+        reply.code(ACCEPTED)
+        return { a: 1 }
+      }
+    })
+
+    const response = await sharedServer.inject({ method: 'GET', url: '/bad-code' })
+
+    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+    t.deepEqual(JSON.parse(response.payload), {
+      error: 'Internal Server Error',
+      message: 'This endpoint cannot respond with HTTP status 202.',
+      statusCode: INTERNAL_SERVER_ERROR
     })
   })
 

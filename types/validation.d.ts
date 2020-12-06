@@ -8,3 +8,4 @@ export declare function convertValidationErrors(section: RequestSection, data: {
     [key: string]: unknown;
 }, validationErrors: Array<ValidationResult>): Validations;
 export declare function addResponseValidation(this: FastifyInstance, route: RouteOptions): void;
+export declare function compileResponseValidationSchema(this: FastifyInstance): void;
