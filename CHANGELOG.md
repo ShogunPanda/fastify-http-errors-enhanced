@@ -1,3 +1,7 @@
+### 2020-12-07 / 2.4.0
+
+- chore: Update dependencies.
+
 ### 2020-12-06 / 2.3.1
 
 - fix: Consider schema encapsulation.
