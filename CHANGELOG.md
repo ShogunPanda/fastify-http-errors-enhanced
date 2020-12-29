@@ -1,3 +1,7 @@
+### 2020-12-29 / 2.4.1
+
+- fix: Avoid shared decorator data.
+
 ### 2020-12-07 / 2.4.0
 
 - chore: Update dependencies.
