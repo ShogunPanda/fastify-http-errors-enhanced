@@ -1,4 +1,4 @@
-import { FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify'
+import { FastifyError, FastifyInstance, FastifyPluginOptions, FastifyRequest } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
 import { handleErrors, handleNotFoundError } from './handlers'
 import { kHttpErrorsEnhancedProperties, kHttpErrorsEnhancedResponseValidations } from './interfaces'
@@ -16,11 +16,16 @@ export const plugin = fastifyPlugin(
     const convertResponsesValidationErrors = options.convertResponsesValidationErrors ?? !isProduction
     const allowUndeclaredResponses = options.allowUndeclaredResponses ?? false
 
-    instance.decorateRequest(kHttpErrorsEnhancedProperties, {
-      hideUnhandledErrors,
-      convertValidationErrors,
-      allowUndeclaredResponses
+    instance.decorateRequest(kHttpErrorsEnhancedProperties, null)
+
+    instance.addHook('onRequest', async (request: FastifyRequest) => {
+      request[kHttpErrorsEnhancedProperties] = {
+        hideUnhandledErrors,
+        convertValidationErrors,
+        allowUndeclaredResponses
+      }
     })
+
     instance.setErrorHandler(handleErrors)
     instance.setNotFoundHandler(handleNotFoundError)
 
