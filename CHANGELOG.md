@@ -1,3 +1,7 @@
+### 2021-01-02 / 2.5.0
+
+- chore: Updated dependencies, code and tools.
+
 ### 2020-12-29 / 2.4.1
 
 - fix: Avoid shared decorator data.
