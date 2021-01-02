@@ -39,7 +39,7 @@
   "dependencies": {
     "ajv": "^7.0.2",
     "fastify-plugin": "^3.0.0",
-    "http-errors-enhanced": "^0.5.2"
+    "http-errors-enhanced": "^0.6.0"
   },
   "devDependencies": {
     "@cowtech/eslint-config": "^7.10.1",
