@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { Ajv, ValidateFunction } from 'ajv';
+import Ajv, { ValidateFunction } from 'ajv';
 export declare const kHttpErrorsEnhancedProperties: unique symbol;
 export declare const kHttpErrorsEnhancedResponseValidations: unique symbol;
 declare module 'fastify' {

@@ -106,6 +106,8 @@ export function convertValidationErrors(
       key = key.substring(1)
     }
 
+    // Remove useless quotes
+    /* istanbul ignore next */
     if (key.startsWith('[') && key.endsWith(']')) {
       key = key.substring(1, key.length - 1)
     }
@@ -175,22 +177,20 @@ export function convertValidationErrors(
       message = `${e.message.replace(/^should/, 'must')} (${e.keyword})`
     }
 
-    // Find the property to add
-    let property = key
-      .replace(/\[(\d+)\]/g, '.$1') // Array path
-      .replace(/\[([^\]]+)\]/g, '.$1') // Object path
-
     // Remove useless quotes
-    if (property.match(/(?:^['"])(?:[^.]+)(?:['"]$)/)) {
-      property = property.substring(1, property.length - 1)
+    /* istanbul ignore next */
+    if (key.match(/(?:^['"])(?:[^.]+)(?:['"]$)/)) {
+      key = key.substring(1, key.length - 1)
     }
 
     // Fix empty properties
-    if (!property) {
-      property = '$root'
+    if (!key) {
+      key = '$root'
     }
 
-    errors[property] = message
+    key = key.replace(/^\//, '')
+
+    errors[key] = message
   }
 
   return { [section]: errors }
@@ -258,8 +258,7 @@ export function compileResponseValidationSchema(this: FastifyInstance): void {
       removeAdditional: false,
       useDefaults: true,
       coerceTypes: false,
-      allErrors: true,
-      nullable: true
+      allErrors: true
     })
 
     compiler.addSchema(Object.values(instance.getSchemas()))

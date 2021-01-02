@@ -150,8 +150,7 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
         removeAdditional: false,
         useDefaults: true,
         coerceTypes: true,
-        allErrors: true,
-        nullable: true
+        allErrors: true
       }
     }
   })

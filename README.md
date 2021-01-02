@@ -3,7 +3,7 @@
 [![Package Version](https://img.shields.io/npm/v/fastify-http-errors-enhanced.svg)](https://npm.im/fastify-http-errors-enhanced)
 [![Dependency Status](https://img.shields.io/david/ShogunPanda/fastify-http-errors-enhanced)](https://david-dm.org/ShogunPanda/fastify-http-errors-enhanced)
 [![Build](https://github.com/ShogunPanda/fastify-http-errors-enhanced/workflows/CI/badge.svg)](https://github.com/ShogunPanda/fastify-http-errors-enhanced/actions?query=workflow%3ACI)
-[![Code Coverage](https://img.shields.io/codecov/c/gh/ShogunPanda/fastify-http-errors-enhanced?token=d0ae1643f35c4c4f9714a357f796d05d)](https://codecov.io/gh/ShogunPanda/fastify-http-errors-enhanced)
+[![Code Coverage](https://img.shields.io/codecov/c/gh/ShogunPanda/fastify-http-errors-enhanced?token=ep3IRURLnT)](https://codecov.io/gh/ShogunPanda/fastify-http-errors-enhanced)
 
 A error handling plugin for Fastify that uses enhanced HTTP errors.
 

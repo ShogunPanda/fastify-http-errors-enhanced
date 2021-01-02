@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
 import Ajv from 'ajv'
+import addFormats from 'ajv-formats'
 import fastify, { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest, ValidationResult } from 'fastify'
 import { ACCEPTED, INTERNAL_SERVER_ERROR, OK } from 'http-errors-enhanced'
 import t from 'tap'
@@ -146,19 +147,26 @@ t.test('Validation', (t: Test) => {
       useDefaults: true,
       coerceTypes: true,
       allErrors: true,
-      nullable: true,
       formats: {
-        invalidResponseCode(raw: number): boolean {
-          return raw < 100 && raw > 599
+        invalidResponseCode: {
+          validate(raw: number): boolean {
+            return raw < 100 && raw > 599
+          }
         },
-        invalidResponse(raw: number): boolean {
-          return raw < 100 && raw > 599
+        invalidResponse: {
+          validate(raw: number): boolean {
+            return raw < 100 && raw > 599
+          }
         },
-        noMessage(): boolean {
-          return false
+        noMessage: {
+          validate(): boolean {
+            return false
+          }
         }
       }
     })
+
+    addFormats(ajv)
 
     const schema = {
       type: 'object',
@@ -225,7 +233,7 @@ t.test('Validation', (t: Test) => {
         },
         pattern: {
           type: 'string',
-          pattern: '\\d+{a}abc'
+          pattern: '\\d+\\{a\\}abc'
         },
         uuid: {
           type: 'string',
@@ -337,9 +345,9 @@ t.test('Validation', (t: Test) => {
         emptyArray: 'must be a empty array',
         minItems: 'must be an array with at least 2 items',
         maxItems: 'must be an array with at most 2 items',
-        'arrayPath.0': 'must be a valid number',
-        "objectPath.'x-abc'": 'must be a valid number',
-        'objectPath.cde': 'must be a valid number',
+        'arrayPath/0': 'must be a valid number',
+        'objectPath/x-abc': 'must be a valid number',
+        'objectPath/cde': 'must be a valid number',
         minimum: 'must be a number greater than or equal to 5',
         maximum: 'must be a number less than or equal to 5',
         integer: 'must be a valid integer number',
@@ -347,7 +355,7 @@ t.test('Validation', (t: Test) => {
         number: 'must be a valid number',
         enum: 'must be one of the following values: "a", "b" or "c"',
         presentString: 'must be a non empty string',
-        pattern: 'must match pattern "\\d+{a}abc"',
+        pattern: 'must match pattern "\\d+\\{a\\}abc"',
         uuid: 'must be a valid GUID (UUID v4)',
         hostname: 'must be a valid hostname',
         ipv4: 'must be a valid IPv4',
