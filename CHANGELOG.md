@@ -1,3 +1,7 @@
+### 2021-01-02 / 2.6.0
+
+- feat: Updated dependencies.
+
 ### 2021-01-02 / 2.5.0
 
 - chore: Updated dependencies, code and tools.
