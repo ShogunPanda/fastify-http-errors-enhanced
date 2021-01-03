@@ -1,3 +1,7 @@
+### 2021-01-03 / 2.7.0
+
+- fix: Allow example keyword in AJV.
+
 ### 2021-01-03 / 2.6.1
 
 - chore: Updated linter config.
