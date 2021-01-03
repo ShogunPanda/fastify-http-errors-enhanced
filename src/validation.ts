@@ -262,6 +262,7 @@ export function compileResponseValidationSchema(this: FastifyInstance): void {
     })
 
     compiler.addSchema(Object.values(instance.getSchemas()))
+    compiler.addKeyword('example')
 
     for (const [code, schema] of schemas) {
       validators[code] = compiler.compile(schema)
