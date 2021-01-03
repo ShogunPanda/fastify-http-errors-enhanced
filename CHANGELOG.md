@@ -1,3 +1,7 @@
+### 2021-01-03 / 2.6.1
+
+- chore: Updated linter config.
+
 ### 2021-01-02 / 2.6.0
 
 - feat: Updated dependencies.
