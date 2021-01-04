@@ -252,8 +252,18 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
 }
 
 export function compileResponseValidationSchema(this: FastifyInstance): void {
+  // Fix CJS/ESM interoperability
+  // @ts-expect-error
+  let AjvConstructor = Ajv as Ajv & { default?: Ajv }
+
+  /* istanbul ignore next */
+  if (AjvConstructor.default) {
+    AjvConstructor = AjvConstructor.default
+  }
+
   for (const [instance, validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
-    const compiler = new Ajv({
+    // @ts-expect-error
+    const compiler = new AjvConstructor({
       // The fastify defaults, with the exception of removeAdditional and coerceTypes, which have been reversed
       removeAdditional: false,
       useDefaults: true,

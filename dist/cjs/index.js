@@ -49,5 +49,9 @@ exports.plugin = fastify_plugin_1.default(function (instance, options, done) {
     done();
 }, { name: 'fastify-http-errors-enhanced' });
 exports.default = exports.plugin;
-module.exports = exports.plugin;
-Object.assign(module.exports, exports);
+// Fix CommonJS exporting
+/* istanbul ignore else */
+if (typeof module !== 'undefined') {
+    module.exports = exports.plugin;
+    Object.assign(module.exports, exports);
+}

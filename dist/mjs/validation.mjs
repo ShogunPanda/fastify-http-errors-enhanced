@@ -1,14 +1,8 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.compileResponseValidationSchema = exports.addResponseValidation = exports.convertValidationErrors = exports.validationMessagesFormatters = exports.niceJoin = void 0;
-const ajv_1 = __importDefault(require("ajv"));
-const http_errors_enhanced_1 = require("http-errors-enhanced");
-const interfaces_1 = require("./interfaces");
-const utils_1 = require("./utils");
-function niceJoin(array, lastSeparator = ' and ', separator = ', ') {
+import Ajv from 'ajv';
+import { InternalServerError, INTERNAL_SERVER_ERROR } from 'http-errors-enhanced';
+import { kHttpErrorsEnhancedProperties, kHttpErrorsEnhancedResponseValidations } from "./interfaces.mjs";
+import { get } from "./utils.mjs";
+export function niceJoin(array, lastSeparator = ' and ', separator = ', ') {
     switch (array.length) {
         case 0:
             return '';
@@ -20,8 +14,7 @@ function niceJoin(array, lastSeparator = ' and ', separator = ', ') {
             return array.slice(0, array.length - 1).join(separator) + lastSeparator + array[array.length - 1];
     }
 }
-exports.niceJoin = niceJoin;
-exports.validationMessagesFormatters = {
+export const validationMessagesFormatters = {
     contentType: () => 'only JSON payloads are accepted. Please set the "Content-Type" header to start with "application/json"',
     json: () => 'the body payload is not a valid JSON',
     jsonEmpty: () => 'the JSON body payload cannot be empty if the "Content-Type" header is set',
@@ -71,7 +64,7 @@ exports.validationMessagesFormatters = {
     invalidResponse: (code) => `The response returned from the endpoint violates its specification for the HTTP status ${code}.`,
     invalidFormat: (format) => `must match format "${format}" (format)`
 };
-function convertValidationErrors(section, data, validationErrors) {
+export function convertValidationErrors(section, data, validationErrors) {
     const errors = {};
     if (section === 'querystring') {
         section = 'query';
@@ -97,44 +90,44 @@ function convertValidationErrors(section, data, validationErrors) {
             case 'required':
             case 'dependencies':
                 key = e.params.missingProperty;
-                message = exports.validationMessagesFormatters.missing();
+                message = validationMessagesFormatters.missing();
                 break;
             case 'additionalProperties':
                 key = e.params.additionalProperty;
-                message = exports.validationMessagesFormatters.unknown();
+                message = validationMessagesFormatters.unknown();
                 break;
             case 'type':
-                message = exports.validationMessagesFormatters.paramType(e.params.type);
+                message = validationMessagesFormatters.paramType(e.params.type);
                 break;
             case 'minProperties':
-                message = exports.validationMessagesFormatters.minimumProperties(e.params.limit);
+                message = validationMessagesFormatters.minimumProperties(e.params.limit);
                 break;
             case 'maxProperties':
-                message = exports.validationMessagesFormatters.maximumProperties(e.params.limit);
+                message = validationMessagesFormatters.maximumProperties(e.params.limit);
                 break;
             case 'minItems':
-                message = exports.validationMessagesFormatters.minimumItems(e.params.limit);
+                message = validationMessagesFormatters.minimumItems(e.params.limit);
                 break;
             case 'maxItems':
-                message = exports.validationMessagesFormatters.maximumItems(e.params.limit);
+                message = validationMessagesFormatters.maximumItems(e.params.limit);
                 break;
             case 'minimum':
-                message = exports.validationMessagesFormatters.minimum(e.params.limit);
+                message = validationMessagesFormatters.minimum(e.params.limit);
                 break;
             case 'maximum':
-                message = exports.validationMessagesFormatters.maximum(e.params.limit);
+                message = validationMessagesFormatters.maximum(e.params.limit);
                 break;
             case 'enum':
-                message = exports.validationMessagesFormatters.enum(e.params.allowedValues);
+                message = validationMessagesFormatters.enum(e.params.allowedValues);
                 break;
             case 'pattern':
                 pattern = e.params.pattern;
-                value = utils_1.get(data, key);
+                value = get(data, key);
                 if (pattern === '.+' && !value) {
-                    message = exports.validationMessagesFormatters.presentString();
+                    message = validationMessagesFormatters.presentString();
                 }
                 else {
-                    message = exports.validationMessagesFormatters.pattern(e.params.pattern);
+                    message = validationMessagesFormatters.pattern(e.params.pattern);
                 }
                 break;
             case 'format':
@@ -143,7 +136,7 @@ function convertValidationErrors(section, data, validationErrors) {
                 if (reason === 'date-time') {
                     reason = 'timestamp';
                 }
-                message = (exports.validationMessagesFormatters[reason] || exports.validationMessagesFormatters.invalidFormat)(reason);
+                message = (validationMessagesFormatters[reason] || validationMessagesFormatters.invalidFormat)(reason);
                 break;
         }
         // No custom message was found, default to input one replacing the starting verb and adding some path info
@@ -164,8 +157,7 @@ function convertValidationErrors(section, data, validationErrors) {
     }
     return { [section]: errors };
 }
-exports.convertValidationErrors = convertValidationErrors;
-function addResponseValidation(route) {
+export function addResponseValidation(route) {
     var _a;
     if (!((_a = route.schema) === null || _a === void 0 ? void 0 : _a.response)) {
         return;
@@ -175,7 +167,7 @@ function addResponseValidation(route) {
       Add these validators to the list of the one to compile once the server is started.
       This makes possible to handle shared schemas.
     */
-    this[interfaces_1.kHttpErrorsEnhancedResponseValidations].push([
+    this[kHttpErrorsEnhancedResponseValidations].push([
         this,
         validators,
         Object.entries(route.schema.response)
@@ -184,31 +176,38 @@ function addResponseValidation(route) {
     route.preSerialization = async function (request, reply, payload) {
         const statusCode = reply.raw.statusCode;
         // Never validate error 500
-        if (statusCode === http_errors_enhanced_1.INTERNAL_SERVER_ERROR) {
+        if (statusCode === INTERNAL_SERVER_ERROR) {
             return payload;
         }
         // No validator, it means the HTTP status is not allowed
         const validator = validators[statusCode];
         if (!validator) {
-            if (request[interfaces_1.kHttpErrorsEnhancedProperties].allowUndeclaredResponses) {
+            if (request[kHttpErrorsEnhancedProperties].allowUndeclaredResponses) {
                 return payload;
             }
-            throw new http_errors_enhanced_1.InternalServerError(exports.validationMessagesFormatters.invalidResponseCode(statusCode));
+            throw new InternalServerError(validationMessagesFormatters.invalidResponseCode(statusCode));
         }
         // Now validate the payload
         const valid = validator(payload);
         if (!valid) {
-            throw new http_errors_enhanced_1.InternalServerError(exports.validationMessagesFormatters.invalidResponse(statusCode), {
+            throw new InternalServerError(validationMessagesFormatters.invalidResponse(statusCode), {
                 failedValidations: convertValidationErrors('response', payload, validator.errors)
             });
         }
         return payload;
     };
 }
-exports.addResponseValidation = addResponseValidation;
-function compileResponseValidationSchema() {
-    for (const [instance, validators, schemas] of this[interfaces_1.kHttpErrorsEnhancedResponseValidations]) {
-        const compiler = new ajv_1.default({
+export function compileResponseValidationSchema() {
+    // Fix CJS/ESM interoperability
+    // @ts-expect-error
+    let AjvConstructor = Ajv;
+    /* istanbul ignore next */
+    if (AjvConstructor.default) {
+        AjvConstructor = AjvConstructor.default;
+    }
+    for (const [instance, validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
+        // @ts-expect-error
+        const compiler = new AjvConstructor({
             // The fastify defaults, with the exception of removeAdditional and coerceTypes, which have been reversed
             removeAdditional: false,
             useDefaults: true,
@@ -222,4 +221,3 @@ function compileResponseValidationSchema() {
         }
     }
 }
-exports.compileResponseValidationSchema = compileResponseValidationSchema;
