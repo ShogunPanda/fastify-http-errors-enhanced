@@ -1,3 +1,7 @@
+### 2021-01-04 / 2.8.0
+
+- feat: Export as ESM.
+
 ### 2021-01-03 / 2.7.0
 
 - fix: Allow example keyword in AJV.
