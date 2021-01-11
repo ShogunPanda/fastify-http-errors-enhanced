@@ -1,5 +1,5 @@
 import { addAdditionalProperties, BadRequestError, InternalServerError, INTERNAL_SERVER_ERROR, messagesByCodes, NotFoundError, serializeError, UnsupportedMediaTypeError } from 'http-errors-enhanced';
-import { kHttpErrorsEnhancedProperties } from "./interfaces.mjs";
+import { kHttpErrorsEnhancedConfiguration } from "./interfaces.mjs";
 import { upperFirst } from "./utils.mjs";
 import { convertValidationErrors, validationMessagesFormatters } from "./validation.mjs";
 export function handleNotFoundError(request, reply) {
@@ -21,11 +21,11 @@ export function handleErrors(error, request, reply) {
     // It is a generic error, handle it
     const code = error.code;
     if (!('statusCode' in error)) {
-        if ('validation' in error && ((_a = request[kHttpErrorsEnhancedProperties]) === null || _a === void 0 ? void 0 : _a.convertValidationErrors)) {
+        if ('validation' in error && ((_a = request[kHttpErrorsEnhancedConfiguration]) === null || _a === void 0 ? void 0 : _a.convertValidationErrors)) {
             // If it is a validation error, convert errors to human friendly format
             error = handleValidationError(error, request);
         }
-        else if ((_b = request[kHttpErrorsEnhancedProperties]) === null || _b === void 0 ? void 0 : _b.hideUnhandledErrors) {
+        else if ((_b = request[kHttpErrorsEnhancedConfiguration]) === null || _b === void 0 ? void 0 : _b.hideUnhandledErrors) {
             // It is requested to hide the error, just log it and then create a generic one
             request.log.error({ error: serializeError(error) });
             error = new InternalServerError('An error occurred trying to process your request.');

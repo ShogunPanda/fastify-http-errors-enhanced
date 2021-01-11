@@ -508,5 +508,42 @@ t.test('Response Validation', (t: Test) => {
     })
   })
 
+  t.test('should support the customization of the response validator', async (t: Test) => {
+    const server = fastify()
+
+    let compiler: Ajv | undefined
+
+    server.register(fastifyErrorProperties, {
+      convertResponsesValidationErrors: true,
+      responseValidatorCustomizer(actual: Ajv) {
+        compiler = actual
+      }
+    })
+
+    server.get('/bad-code', {
+      schema: {
+        response: {
+          [OK]: {
+            $id: '#ok',
+            type: 'object',
+            properties: {
+              a: {
+                type: 'string'
+              }
+            }
+          }
+        }
+      },
+      async handler(_r: FastifyRequest, reply: FastifyReply): Promise<object> {
+        reply.code(ACCEPTED)
+        return { a: 1 }
+      }
+    })
+
+    await server.inject({ method: 'GET', url: '/bad-code' })
+
+    t.type(compiler, Ajv)
+  })
+
   t.end()
 })

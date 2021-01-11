@@ -1,6 +1,6 @@
 import Ajv from 'ajv';
 import { InternalServerError, INTERNAL_SERVER_ERROR } from 'http-errors-enhanced';
-import { kHttpErrorsEnhancedProperties, kHttpErrorsEnhancedResponseValidations } from "./interfaces.mjs";
+import { kHttpErrorsEnhancedConfiguration, kHttpErrorsEnhancedResponseValidations } from "./interfaces.mjs";
 import { get } from "./utils.mjs";
 export function niceJoin(array, lastSeparator = ' and ', separator = ', ') {
     switch (array.length) {
@@ -182,7 +182,7 @@ export function addResponseValidation(route) {
         // No validator, it means the HTTP status is not allowed
         const validator = validators[statusCode];
         if (!validator) {
-            if (request[kHttpErrorsEnhancedProperties].allowUndeclaredResponses) {
+            if (request[kHttpErrorsEnhancedConfiguration].allowUndeclaredResponses) {
                 return payload;
             }
             throw new InternalServerError(validationMessagesFormatters.invalidResponseCode(statusCode));
@@ -197,7 +197,7 @@ export function addResponseValidation(route) {
         return payload;
     };
 }
-export function compileResponseValidationSchema() {
+export function compileResponseValidationSchema(configuration) {
     // Fix CJS/ESM interoperability
     // @ts-expect-error
     let AjvConstructor = Ajv;
@@ -205,6 +205,7 @@ export function compileResponseValidationSchema() {
     if (AjvConstructor.default) {
         AjvConstructor = AjvConstructor.default;
     }
+    const hasCustomizer = typeof configuration.responseValidatorCustomizer === 'function';
     for (const [instance, validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
         // @ts-expect-error
         const compiler = new AjvConstructor({
@@ -216,6 +217,9 @@ export function compileResponseValidationSchema() {
         });
         compiler.addSchema(Object.values(instance.getSchemas()));
         compiler.addKeyword('example');
+        if (hasCustomizer) {
+            configuration.responseValidatorCustomizer(compiler);
+        }
         for (const [code, schema] of schemas) {
             validators[code] = compiler.compile(schema);
         }

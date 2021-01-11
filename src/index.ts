@@ -1,7 +1,7 @@
 import { FastifyError, FastifyInstance, FastifyPluginOptions, FastifyRequest } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
 import { handleErrors, handleNotFoundError } from './handlers'
-import { kHttpErrorsEnhancedProperties, kHttpErrorsEnhancedResponseValidations } from './interfaces'
+import { Configuration, kHttpErrorsEnhancedConfiguration, kHttpErrorsEnhancedResponseValidations } from './interfaces'
 import { addResponseValidation, compileResponseValidationSchema } from './validation'
 
 export * from './handlers'
@@ -11,19 +11,20 @@ export { convertValidationErrors, niceJoin, validationMessagesFormatters } from 
 export const plugin = fastifyPlugin(
   function (instance: FastifyInstance, options: FastifyPluginOptions, done: (error?: FastifyError) => void): void {
     const isProduction = process.env.NODE_ENV === 'production'
-    const hideUnhandledErrors = options.hideUnhandledErrors ?? isProduction
-    const convertValidationErrors = options.convertValidationErrors ?? true
     const convertResponsesValidationErrors = options.convertResponsesValidationErrors ?? !isProduction
-    const allowUndeclaredResponses = options.allowUndeclaredResponses ?? false
 
-    instance.decorateRequest(kHttpErrorsEnhancedProperties, null)
+    const configuration: Configuration = {
+      hideUnhandledErrors: options.hideUnhandledErrors ?? isProduction,
+      convertValidationErrors: options.convertValidationErrors ?? true,
+      responseValidatorCustomizer: options.responseValidatorCustomizer,
+      allowUndeclaredResponses: options.allowUndeclaredResponses ?? false
+    }
+
+    instance.decorate(kHttpErrorsEnhancedConfiguration, null)
+    instance.decorateRequest(kHttpErrorsEnhancedConfiguration, null)
 
     instance.addHook('onRequest', async (request: FastifyRequest) => {
-      request[kHttpErrorsEnhancedProperties] = {
-        hideUnhandledErrors,
-        convertValidationErrors,
-        allowUndeclaredResponses
-      }
+      request[kHttpErrorsEnhancedConfiguration] = configuration
     })
 
     instance.setErrorHandler(handleErrors)
@@ -33,7 +34,7 @@ export const plugin = fastifyPlugin(
       instance.decorate(kHttpErrorsEnhancedResponseValidations, [])
 
       instance.addHook('onRoute', addResponseValidation)
-      instance.addHook('onReady', compileResponseValidationSchema)
+      instance.addHook('onReady', compileResponseValidationSchema.bind(instance, configuration))
     }
 
     done()

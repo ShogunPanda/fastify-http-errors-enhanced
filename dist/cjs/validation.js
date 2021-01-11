@@ -190,7 +190,7 @@ function addResponseValidation(route) {
         // No validator, it means the HTTP status is not allowed
         const validator = validators[statusCode];
         if (!validator) {
-            if (request[interfaces_1.kHttpErrorsEnhancedProperties].allowUndeclaredResponses) {
+            if (request[interfaces_1.kHttpErrorsEnhancedConfiguration].allowUndeclaredResponses) {
                 return payload;
             }
             throw new http_errors_enhanced_1.InternalServerError(exports.validationMessagesFormatters.invalidResponseCode(statusCode));
@@ -206,7 +206,7 @@ function addResponseValidation(route) {
     };
 }
 exports.addResponseValidation = addResponseValidation;
-function compileResponseValidationSchema() {
+function compileResponseValidationSchema(configuration) {
     // Fix CJS/ESM interoperability
     // @ts-expect-error
     let AjvConstructor = ajv_1.default;
@@ -214,6 +214,7 @@ function compileResponseValidationSchema() {
     if (AjvConstructor.default) {
         AjvConstructor = AjvConstructor.default;
     }
+    const hasCustomizer = typeof configuration.responseValidatorCustomizer === 'function';
     for (const [instance, validators, schemas] of this[interfaces_1.kHttpErrorsEnhancedResponseValidations]) {
         // @ts-expect-error
         const compiler = new AjvConstructor({
@@ -225,6 +226,9 @@ function compileResponseValidationSchema() {
         });
         compiler.addSchema(Object.values(instance.getSchemas()));
         compiler.addKeyword('example');
+        if (hasCustomizer) {
+            configuration.responseValidatorCustomizer(compiler);
+        }
         for (const [code, schema] of schemas) {
             validators[code] = compiler.compile(schema);
         }

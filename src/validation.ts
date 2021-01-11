@@ -2,7 +2,8 @@ import Ajv from 'ajv'
 import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions, ValidationResult } from 'fastify'
 import { InternalServerError, INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
 import {
-  kHttpErrorsEnhancedProperties,
+  Configuration,
+  kHttpErrorsEnhancedConfiguration,
   kHttpErrorsEnhancedResponseValidations,
   RequestSection,
   ResponseSchemas,
@@ -231,7 +232,7 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
     const validator = validators[statusCode]
 
     if (!validator) {
-      if (request[kHttpErrorsEnhancedProperties]!.allowUndeclaredResponses) {
+      if (request[kHttpErrorsEnhancedConfiguration]!.allowUndeclaredResponses) {
         return payload
       }
 
@@ -251,7 +252,7 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
   }
 }
 
-export function compileResponseValidationSchema(this: FastifyInstance): void {
+export function compileResponseValidationSchema(this: FastifyInstance, configuration: Configuration): void {
   // Fix CJS/ESM interoperability
   // @ts-expect-error
   let AjvConstructor = Ajv as Ajv & { default?: Ajv }
@@ -260,6 +261,8 @@ export function compileResponseValidationSchema(this: FastifyInstance): void {
   if (AjvConstructor.default) {
     AjvConstructor = AjvConstructor.default
   }
+
+  const hasCustomizer = typeof configuration.responseValidatorCustomizer === 'function'
 
   for (const [instance, validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
     // @ts-expect-error
@@ -273,6 +276,10 @@ export function compileResponseValidationSchema(this: FastifyInstance): void {
 
     compiler.addSchema(Object.values(instance.getSchemas()))
     compiler.addKeyword('example')
+
+    if (hasCustomizer) {
+      configuration.responseValidatorCustomizer!(compiler)
+    }
 
     for (const [code, schema] of schemas) {
       validators[code] = compiler.compile(schema)

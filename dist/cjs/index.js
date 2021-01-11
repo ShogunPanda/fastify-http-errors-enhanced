@@ -27,24 +27,24 @@ Object.defineProperty(exports, "validationMessagesFormatters", { enumerable: tru
 exports.plugin = fastify_plugin_1.default(function (instance, options, done) {
     var _a, _b, _c, _d;
     const isProduction = process.env.NODE_ENV === 'production';
-    const hideUnhandledErrors = (_a = options.hideUnhandledErrors) !== null && _a !== void 0 ? _a : isProduction;
-    const convertValidationErrors = (_b = options.convertValidationErrors) !== null && _b !== void 0 ? _b : true;
-    const convertResponsesValidationErrors = (_c = options.convertResponsesValidationErrors) !== null && _c !== void 0 ? _c : !isProduction;
-    const allowUndeclaredResponses = (_d = options.allowUndeclaredResponses) !== null && _d !== void 0 ? _d : false;
-    instance.decorateRequest(interfaces_1.kHttpErrorsEnhancedProperties, null);
+    const convertResponsesValidationErrors = (_a = options.convertResponsesValidationErrors) !== null && _a !== void 0 ? _a : !isProduction;
+    const configuration = {
+        hideUnhandledErrors: (_b = options.hideUnhandledErrors) !== null && _b !== void 0 ? _b : isProduction,
+        convertValidationErrors: (_c = options.convertValidationErrors) !== null && _c !== void 0 ? _c : true,
+        responseValidatorCustomizer: options.responseValidatorCustomizer,
+        allowUndeclaredResponses: (_d = options.allowUndeclaredResponses) !== null && _d !== void 0 ? _d : false
+    };
+    instance.decorate(interfaces_1.kHttpErrorsEnhancedConfiguration, null);
+    instance.decorateRequest(interfaces_1.kHttpErrorsEnhancedConfiguration, null);
     instance.addHook('onRequest', async (request) => {
-        request[interfaces_1.kHttpErrorsEnhancedProperties] = {
-            hideUnhandledErrors,
-            convertValidationErrors,
-            allowUndeclaredResponses
-        };
+        request[interfaces_1.kHttpErrorsEnhancedConfiguration] = configuration;
     });
     instance.setErrorHandler(handlers_1.handleErrors);
     instance.setNotFoundHandler(handlers_1.handleNotFoundError);
     if (convertResponsesValidationErrors) {
         instance.decorate(interfaces_1.kHttpErrorsEnhancedResponseValidations, []);
         instance.addHook('onRoute', validation_1.addResponseValidation);
-        instance.addHook('onReady', validation_1.compileResponseValidationSchema);
+        instance.addHook('onReady', validation_1.compileResponseValidationSchema.bind(instance, configuration));
     }
     done();
 }, { name: 'fastify-http-errors-enhanced' });

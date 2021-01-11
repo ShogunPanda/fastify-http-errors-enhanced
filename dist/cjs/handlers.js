@@ -26,11 +26,11 @@ function handleErrors(error, request, reply) {
     // It is a generic error, handle it
     const code = error.code;
     if (!('statusCode' in error)) {
-        if ('validation' in error && ((_a = request[interfaces_1.kHttpErrorsEnhancedProperties]) === null || _a === void 0 ? void 0 : _a.convertValidationErrors)) {
+        if ('validation' in error && ((_a = request[interfaces_1.kHttpErrorsEnhancedConfiguration]) === null || _a === void 0 ? void 0 : _a.convertValidationErrors)) {
             // If it is a validation error, convert errors to human friendly format
             error = handleValidationError(error, request);
         }
-        else if ((_b = request[interfaces_1.kHttpErrorsEnhancedProperties]) === null || _b === void 0 ? void 0 : _b.hideUnhandledErrors) {
+        else if ((_b = request[interfaces_1.kHttpErrorsEnhancedConfiguration]) === null || _b === void 0 ? void 0 : _b.hideUnhandledErrors) {
             // It is requested to hide the error, just log it and then create a generic one
             request.log.error({ error: http_errors_enhanced_1.serializeError(error) });
             error = new http_errors_enhanced_1.InternalServerError('An error occurred trying to process your request.');

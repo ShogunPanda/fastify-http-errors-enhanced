@@ -25,6 +25,7 @@ Register as a plugin, optional providing any of the following options:
 - `convertValidationErrors`: Convert validation errors to a structured human readable object. Default is `true`.
 - `convertResponsesValidationErrors`: Convert response validation errors to a structured human readable object. Default is to enable when `NODE_ENV` environment variable is different from `production`.
 - `allowUndeclaredResponses`: When converting response validation errors, allow responses that have no schema defined instead of throwing an error.
+- `responseValidatorCustomizer`: A function that receives a Ajv instances before compiling all response schemas. This can be used to add custom keywords, formats and so on.
 
 Once registered, the server will use the plugin handlers for all errors (basically, both `setErrorHandler` and `setNotFoundHandler` are called).
 
