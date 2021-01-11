@@ -1,3 +1,8 @@
+### 2021-01-11 / 2.9.0
+
+- feat: Added responseValidatorCustomizer.
+- chore: Fine tuned build script.
+
 ### 2021-01-04 / 2.8.0
 
 - feat: Export as ESM.
