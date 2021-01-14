@@ -1,3 +1,7 @@
+### 2021-01-14 / 2.9.1
+
+- fix: Added uri format message.
+
 ### 2021-01-11 / 2.9.0
 
 - feat: Added responseValidatorCustomizer.
