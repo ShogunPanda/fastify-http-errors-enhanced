@@ -24,6 +24,7 @@ export const validationMessagesFormatters = {
     timestamp: () => 'must be a valid ISO 8601 / RFC 3339 timestamp (example: 2018-07-06T12:34:56Z)',
     date: () => 'must be a valid ISO 8601 / RFC 3339 date (example: 2018-07-06)',
     time: () => 'must be a valid ISO 8601 / RFC 3339 time (example: 12:34:56)',
+    uri: () => 'must be a valid URI',
     hostname: () => 'must be a valid hostname',
     ipv4: () => 'must be a valid IPv4',
     ipv6: () => 'must be a valid IPv6',

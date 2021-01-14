@@ -263,6 +263,10 @@ t.test('Validation', (t: Test) => {
           type: 'string',
           format: 'date-time'
         },
+        uri: {
+          type: 'string',
+          format: 'uri'
+        },
         noMessage: {
           type: 'string',
           format: 'noMessage'
@@ -322,6 +326,7 @@ t.test('Validation', (t: Test) => {
       date: 'whatever',
       time: 'whatever',
       dateTime: 'whatever',
+      uri: 'whatever',
       noMessage: true,
       arrayPath: ['abc'],
       objectPath: {
@@ -363,6 +368,7 @@ t.test('Validation', (t: Test) => {
         date: 'must be a valid ISO 8601 / RFC 3339 date (example: 2018-07-06)',
         time: 'must be a valid ISO 8601 / RFC 3339 time (example: 12:34:56)',
         dateTime: 'must be a valid ISO 8601 / RFC 3339 timestamp (example: 2018-07-06T12:34:56Z)',
+        uri: 'must be a valid URI',
         noMessage: 'must match format "noMessage" (format)',
         'needs-quotes': 'must be a valid number',
         uniqueItems: 'must NOT have duplicate items (items ## 0 and 1 are identical) (uniqueItems)'
