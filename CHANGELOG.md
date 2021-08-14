@@ -1,3 +1,7 @@
+### 2021-08-14 / 3.0.0-beta.0
+
+- feat: Only export as ESM.
+
 ### 2021-01-14 / 2.9.1
 
 - fix: Added uri format message.
