@@ -12,7 +12,7 @@ import {
 } from 'http-errors-enhanced'
 import { GenericObject, kHttpErrorsEnhancedConfiguration, NodeError, RequestSection } from './interfaces'
 import { upperFirst } from './utils'
-import { convertValidationErrors, validationMessagesFormatters } from './validation'
+import { convertValidationErrors, validationMessagesFormatters, ValidationResult } from './validation'
 
 export function handleNotFoundError(request: FastifyRequest, reply: FastifyReply): void {
   handleErrors(new NotFoundError('Not found.'), request, reply)
@@ -27,7 +27,11 @@ export function handleValidationError(error: FastifyError, request: FastifyReque
   const section = error.message.match(/^\w+/)![0] as RequestSection
 
   return new BadRequestError('One or more validations failed trying to process your request.', {
-    failedValidations: convertValidationErrors(section, Reflect.get(request, section), error.validation!)
+    failedValidations: convertValidationErrors(
+      section,
+      Reflect.get(request, section),
+      error.validation! as Array<ValidationResult>
+    )
   })
 }
 

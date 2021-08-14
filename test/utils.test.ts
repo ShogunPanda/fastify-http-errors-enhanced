@@ -21,11 +21,11 @@ t.test('Utils', (t: Test) => {
       b: null
     }
 
-    t.deepEqual(get(target, 'a'), [{ b: { c: 1 } }])
+    t.same(get(target, 'a'), [{ b: { c: 1 } }])
     t.type(get(target, 'b.c'), 'undefined')
-    t.deepEqual(get(target, 'a.0.b'), { c: 1 })
+    t.same(get(target, 'a.0.b'), { c: 1 })
     t.equal(get(target, 'a.0.b.c'), 1)
-    t.deepEqual(get(target, 'a.[0].b'), { c: 1 })
+    t.same(get(target, 'a.[0].b'), { c: 1 })
     t.type(get(target, 'a.[2].b'), 'undefined')
     t.type(get(target, 'a.[2]a.b'), 'undefined')
     t.type(get(target, 'a.0.c.e.f'), 'undefined')

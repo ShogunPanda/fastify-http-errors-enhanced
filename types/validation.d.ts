@@ -1,5 +1,9 @@
-import { FastifyInstance, RouteOptions, ValidationResult } from 'fastify';
+import { FastifyInstance, RouteOptions, ValidationResult as FastifyValidationResult } from 'fastify';
 import { Configuration, RequestSection, ValidationFormatter, Validations } from './interfaces';
+export interface ValidationResult extends FastifyValidationResult {
+    dataPath: any;
+    instancePath: string;
+}
 export declare function niceJoin(array: Array<string>, lastSeparator?: string, separator?: string): string;
 export declare const validationMessagesFormatters: {
     [key: string]: ValidationFormatter;

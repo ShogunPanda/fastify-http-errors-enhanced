@@ -1,5 +1,11 @@
 import Ajv from 'ajv'
-import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions, ValidationResult } from 'fastify'
+import {
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+  RouteOptions,
+  ValidationResult as FastifyValidationResult
+} from 'fastify'
 import { InternalServerError, INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
 import {
   Configuration,
@@ -11,6 +17,11 @@ import {
   Validations
 } from './interfaces'
 import { get } from './utils'
+
+export interface ValidationResult extends FastifyValidationResult {
+  dataPath: any
+  instancePath: string
+}
 
 export function niceJoin(array: Array<string>, lastSeparator: string = ' and ', separator: string = ', '): string {
   switch (array.length) {
@@ -102,14 +113,14 @@ export function convertValidationErrors(
     let reason: string
 
     // Normalize the key
-    let key = e.dataPath
+    let key = e.dataPath ?? e.instancePath /* c8 ignore next */ ?? ''
 
     if (key.startsWith('.')) {
       key = key.substring(1)
     }
 
     // Remove useless quotes
-    /* istanbul ignore next */
+    /* c8 ignore next 3 */
     if (key.startsWith('[') && key.endsWith(']')) {
       key = key.substring(1, key.length - 1)
     }
@@ -180,7 +191,7 @@ export function convertValidationErrors(
     }
 
     // Remove useless quotes
-    /* istanbul ignore next */
+    /* c8 ignore next 3 */
     if (key.match(/(?:^['"])(?:[^.]+)(?:['"]$)/)) {
       key = key.substring(1, key.length - 1)
     }
@@ -244,6 +255,7 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
     const valid = validator(payload)
 
     if (!valid) {
+      console.log(validator.errors)
       throw new InternalServerError(validationMessagesFormatters.invalidResponse(statusCode), {
         failedValidations: convertValidationErrors('response', payload, validator.errors as Array<ValidationResult>)
       })
@@ -258,7 +270,6 @@ export function compileResponseValidationSchema(this: FastifyInstance, configura
   // @ts-expect-error
   let AjvConstructor = Ajv as Ajv & { default?: Ajv }
 
-  /* istanbul ignore next */
   if (AjvConstructor.default) {
     AjvConstructor = AjvConstructor.default
   }

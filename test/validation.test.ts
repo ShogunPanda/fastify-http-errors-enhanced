@@ -2,10 +2,11 @@
 
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
-import fastify, { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest, ValidationResult } from 'fastify'
+import fastify, { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify'
 import { ACCEPTED, INTERNAL_SERVER_ERROR, OK } from 'http-errors-enhanced'
 import t from 'tap'
 import { convertValidationErrors, niceJoin, plugin as fastifyErrorProperties } from '../src'
+import { ValidationResult } from '../src/validation'
 
 type Test = typeof t
 
@@ -377,8 +378,8 @@ t.test('Validation', (t: Test) => {
 
     const validate = ajv.compile(schema)
 
-    t.false(validate(data))
-    t.deepEqual(convertValidationErrors('body', data, validate.errors as Array<ValidationResult>), expected)
+    t.notOk(validate(data))
+    t.same(convertValidationErrors('body', data, validate.errors as Array<ValidationResult>), expected)
     t.end()
   })
 
@@ -392,7 +393,7 @@ t.test('Response Validation', (t: Test) => {
     const response = await server!.inject({ method: 'GET', url: '/correct' })
 
     t.equal(response.statusCode, OK)
-    t.deepEqual(JSON.parse(response.payload), { a: '1' })
+    t.same(JSON.parse(response.payload), { a: '1' })
   })
 
   t.test('should validate the response code', async (t: Test) => {
@@ -401,7 +402,7 @@ t.test('Response Validation', (t: Test) => {
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
     t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-    t.deepEqual(JSON.parse(response.payload), {
+    t.same(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
       statusCode: INTERNAL_SERVER_ERROR
@@ -414,7 +415,7 @@ t.test('Response Validation', (t: Test) => {
     const response = await server!.inject({ method: 'GET', url: '/bad-body' })
 
     t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-    t.deepEqual(JSON.parse(response.payload), {
+    t.same(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'The response returned from the endpoint violates its specification for the HTTP status 200.',
       statusCode: INTERNAL_SERVER_ERROR,
@@ -457,7 +458,7 @@ t.test('Response Validation', (t: Test) => {
     const response = await sharedServer.inject({ method: 'GET', url: '/bad-code' })
 
     t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-    t.deepEqual(JSON.parse(response.payload), {
+    t.same(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
       statusCode: INTERNAL_SERVER_ERROR
@@ -470,7 +471,7 @@ t.test('Response Validation', (t: Test) => {
     const response = await server!.inject({ method: 'GET', url: '/no-schema' })
 
     t.equal(response.statusCode, OK)
-    t.deepEqual(JSON.parse(response.payload), { a: 1, c: 2 })
+    t.same(JSON.parse(response.payload), { a: 1, c: 2 })
   })
 
   t.test('should allow responses which are missing in the schema if explicitily enabled', async (t: Test) => {
@@ -479,7 +480,7 @@ t.test('Response Validation', (t: Test) => {
     const response = await server!.inject({ method: 'GET', url: '/undeclared-response' })
 
     t.equal(response.statusCode, ACCEPTED)
-    t.deepEqual(JSON.parse(response.payload), { a: 1 })
+    t.same(JSON.parse(response.payload), { a: 1 })
   })
 
   t.test('should allow everything if the payload is not JSON', async (t: Test) => {
@@ -498,7 +499,7 @@ t.test('Response Validation', (t: Test) => {
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
     t.equal(response.statusCode, ACCEPTED)
-    t.deepEqual(JSON.parse(response.payload), { a: 1 })
+    t.same(JSON.parse(response.payload), { a: 1 })
   })
 
   t.test('should allow everything if explicitily enabled', async (t: Test) => {
@@ -507,7 +508,7 @@ t.test('Response Validation', (t: Test) => {
     const response = await server!.inject({ method: 'GET', url: '/bad-code' })
 
     t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-    t.deepEqual(JSON.parse(response.payload), {
+    t.same(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
       statusCode: INTERNAL_SERVER_ERROR
