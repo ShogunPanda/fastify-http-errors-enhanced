@@ -45,10 +45,12 @@ In addition, the response headers will contain all headers defined in `error.hea
 To clarify, take this server as a example:
 
 ```js
-const server = require('fastify')()
-const { NotFoundError } = require('http-errors-enhanced')
+import fastify from 'fastify'
+import FastifyHttpErrorsEnhanced from 'fastify-http-errors-enhanced'
+import { NotFoundError } from 'http-errors-enhanced'
 
-server.register(require('fastify-http-errors-enhanced'))
+const server = fastify()
+server.register(FastifyHttpErrorsEnhanced)
 
 server.get('/invalid', {
   handler: async function (request, reply) {
@@ -101,10 +103,12 @@ If not hidden, instead, the error will be returned in a standard response that a
 To clarify, take this server as a example:
 
 ```js
-const server = require('fastify')()
-const createError = require('http-errors')
+import fastify from 'fastify'
+import FastifyHttpErrorsEnhanced from 'fastify-http-errors-enhanced'
+import { NotFoundError } from 'http-errors-enhanced'
+import createError from 'http-errors'
 
-server.register(require('fastify-http-errors-enhanced'), { hideUnhandledErrors: false })
+server.register(FastifyHttpErrorsEnhanced, { hideUnhandledErrors: false })
 
 server.get('/invalid', {
   handler(request, reply) {
