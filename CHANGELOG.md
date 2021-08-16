@@ -1,3 +1,7 @@
+### 2021-08-16 / 3.0.0
+
+- chore: Updated README
+
 ### 2021-08-14 / 3.0.0-beta.0
 
 - feat: Only export as ESM.
