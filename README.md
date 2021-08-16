@@ -46,11 +46,11 @@ To clarify, take this server as a example:
 
 ```js
 import fastify from 'fastify'
-import FastifyHttpErrorsEnhanced from 'fastify-http-errors-enhanced'
+import fastifyHttpErrorsEnhanced from 'fastify-http-errors-enhanced'
 import { NotFoundError } from 'http-errors-enhanced'
 
 const server = fastify()
-server.register(FastifyHttpErrorsEnhanced)
+server.register(fastifyHttpErrorsEnhanced)
 
 server.get('/invalid', {
   handler: async function (request, reply) {
@@ -104,11 +104,11 @@ To clarify, take this server as a example:
 
 ```js
 import fastify from 'fastify'
-import FastifyHttpErrorsEnhanced from 'fastify-http-errors-enhanced'
+import fastifyHttpErrorsEnhanced from 'fastify-http-errors-enhanced'
 import { NotFoundError } from 'http-errors-enhanced'
 import createError from 'http-errors'
 
-server.register(FastifyHttpErrorsEnhanced, { hideUnhandledErrors: false })
+server.register(fastifyHttpErrorsEnhanced, { hideUnhandledErrors: false })
 
 server.get('/invalid', {
   handler(request, reply) {
