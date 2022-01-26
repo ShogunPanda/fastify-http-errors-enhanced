@@ -13,74 +13,70 @@ import {
 import t from 'tap'
 import { handleErrors, plugin as fastifyHttpErrorsEnhanced } from '../src'
 
-type Test = typeof t
 type Callback = () => void
-
-let server: FastifyInstance | null
-let standaloneServer: FastifyInstance | null
 
 function routes(instance: FastifyInstance, _options: unknown, done: Callback): void {
   instance.get('/bad-gateway', {
-    async handler(): Promise<void> {
-      throw new BadGatewayError('This was the error message.')
+    handler() {
+      return Promise.reject(new BadGatewayError('This was the error message.'))
     }
   })
 
   instance.get('/headers', {
-    async handler(): Promise<void> {
+    handler() {
       const error = createError(NOT_FOUND, 'This was the error message.', {
         headers: { 'X-Custom-Header': 'Custom-Value' }
       })
 
-      throw error
+      return Promise.reject(error)
     }
   })
 
   instance.get('/properties', {
-    async handler(): Promise<void> {
+    handler() {
       const error = createError(BAD_GATEWAY, 'This was the error message.', { id: 1 })
 
-      throw error
+      return Promise.reject(error)
     }
   })
 
   instance.get('/error', {
-    async handler(): Promise<void> {
+    handler() {
       const error = new Error('This was a generic message.')
       Object.assign(error, { id: 1, headers: { 'X-Custom-Header': 'Custom-Value' } })
 
-      throw error
+      return Promise.reject(error)
     }
   })
 
   instance.get('/error-with-code', {
-    async handler(): Promise<void> {
+    handler() {
       const error = createError(BAD_GATEWAY, 'This was the error message.', { code: 'CODE' })
 
-      throw error
+      return Promise.reject(error)
     }
   })
 
   instance.get('/weird-code', {
-    async handler(): Promise<void> {
+    handler() {
       const error = new BadGatewayError('This was the error message.')
       error.statusCode = 10
 
-      throw error
+      return Promise.reject(error)
     }
   })
 
   instance.get('/weird-error', {
-    async handler(): Promise<void> {
+    handler() {
       const error = new Error('This was the error message.')
       delete error.stack
 
-      throw error
+      return Promise.reject(error)
     }
   })
 
   instance.get('/duck-error', {
-    async handler(): Promise<void> {
+    handler() {
       const error = {
         statusCode: INTERNAL_SERVER_ERROR,
         error: 'Internal Server Error',
@@ -89,9 +85,7 @@ function routes(instance: FastifyInstance, _options: unknown, done: Callback): v
       }
 
       Object.defineProperty(error, 'stack', { enumerable: false })
-
-      // eslint-disable-next-line @typescript-eslint/no-throw-literal
-      throw error
+      return Promise.reject(error)
     }
   })
 
@@ -135,16 +129,16 @@ function routes(instance: FastifyInstance, _options: unknown, done: Callback): v
         }
       }
     },
-    async handler(): Promise<string> {
-      return 'OK'
+    handler() {
+      return Promise.resolve('OK')
     }
   })
 
   done()
 }
 
-async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
-  server = fastify({
+function buildServer(options: FastifyPluginOptions = {}): FastifyInstance {
+  const server = fastify({
     ajv: {
       customOptions: {
         removeAdditional: false,
@@ -161,17 +155,17 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
   return server
 }
 
-async function buildStandaloneServer(): Promise<FastifyInstance> {
-  standaloneServer = fastify()
+function buildStandaloneServer(): FastifyInstance {
+  const standaloneServer = fastify()
 
   standaloneServer.setErrorHandler(handleErrors)
 
   standaloneServer.get('/error/code', {
-    async handler(): Promise<void> {
+    handler() {
       const error = new Error('This was a generic message.')
       Object.assign(error, { code: 'CODE' })
 
-      throw error
+      return Promise.reject(error)
     }
   })
 
@@ -186,20 +180,20 @@ async function buildStandaloneServer(): Promise<FastifyInstance> {
         }
       }
     },
-    async handler(): Promise<void> {
-      throw new Error('This was a generic message.')
+    handler() {
+      return Promise.reject(new Error('This was a generic message.'))
     }
   })
 
   return standaloneServer
 }
 
-t.test('Plugin', (t: Test) => {
-  t.test('Handling http-errors', (t: Test) => {
-    t.test('should correctly return client errors', async (t: Test) => {
-      await buildServer()
+t.test('Plugin', t => {
+  t.test('Handling http-errors', t => {
+    t.test('should correctly return client errors', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({ method: 'GET', url: '/not-found' })
+      const response = await server.inject({ method: 'GET', url: '/not-found' })
 
       t.equal(response.statusCode, NOT_FOUND)
       t.match(response.headers['content-type'], /^application\/json/)
@@ -210,10 +204,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should correctly return server errors', async (t: Test) => {
-      await buildServer()
+    t.test('should correctly return server errors', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({ method: 'GET', url: '/bad-gateway' })
+      const response = await server.inject({ method: 'GET', url: '/bad-gateway' })
 
       t.equal(response.statusCode, BAD_GATEWAY)
       t.same(JSON.parse(response.payload), {
@@ -223,10 +217,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should correctly return error codes when not starting with the prefix', async (t: Test) => {
-      await buildServer()
+    t.test('should correctly return error codes when not starting with the prefix', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({ method: 'GET', url: '/error-with-code' })
+      const response = await server.inject({ method: 'GET', url: '/error-with-code' })
 
       t.equal(response.statusCode, BAD_GATEWAY)
       t.same(JSON.parse(response.payload), {
@@ -237,10 +231,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should correctly return server duck-typed errors', async (t: Test) => {
-      await buildServer()
+    t.test('should correctly return server duck-typed errors', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({ method: 'GET', url: '/duck-error' })
+      const response = await server.inject({ method: 'GET', url: '/duck-error' })
 
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
       t.same(JSON.parse(response.payload), {
@@ -250,10 +244,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should correctly return additional headers', async (t: Test) => {
-      await buildServer()
+    t.test('should correctly return additional headers', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({ method: 'GET', url: '/headers' })
+      const response = await server.inject({ method: 'GET', url: '/headers' })
 
       t.equal(response.statusCode, NOT_FOUND)
       t.equal(response.headers['x-custom-header'], 'Custom-Value')
@@ -264,10 +258,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should correctly return additional properties', async (t: Test) => {
-      await buildServer()
+    t.test('should correctly return additional properties', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({ method: 'GET', url: '/properties' })
+      const response = await server.inject({ method: 'GET', url: '/properties' })
 
       t.equal(response.statusCode, BAD_GATEWAY)
       t.same(JSON.parse(response.payload), {
@@ -278,10 +272,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should default status code to 500 if outside HTTP range', async (t: Test) => {
-      await buildServer()
+    t.test('should default status code to 500 if outside HTTP range', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({ method: 'GET', url: '/weird-code' })
+      const response = await server.inject({ method: 'GET', url: '/weird-code' })
 
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
       t.same(JSON.parse(response.payload), {
@@ -291,10 +285,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should have good defaults if the error is weirdly manipulated', async (t: Test) => {
-      await buildServer({ hideUnhandledErrors: false })
+    t.test('should have good defaults if the error is weirdly manipulated', async t => {
+      const server = buildServer({ hideUnhandledErrors: false })
 
-      const response = await server!.inject({ method: 'GET', url: '/weird-error' })
+      const response = await server.inject({ method: 'GET', url: '/weird-error' })
 
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
       t.same(JSON.parse(response.payload), {
@@ -308,13 +302,13 @@ t.test('Plugin', (t: Test) => {
     t.end()
   })
 
-  t.test('Handling generic errors', (t: Test) => {
+  t.test('Handling generic errors', t => {
     t.test(
       'should correctly return generic errors by wrapping them in a 500 http-error, including headers and properties',
-      async (t: Test) => {
-        await buildServer()
+      async t => {
+        const server = buildServer()
 
-        const response = await server!.inject({ method: 'GET', url: '/error' })
+        const response = await server.inject({ method: 'GET', url: '/error' })
 
         t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
         t.equal(response.headers['x-custom-header'], 'Custom-Value')
@@ -332,10 +326,10 @@ t.test('Plugin', (t: Test) => {
       }
     )
 
-    t.test('should correctly parse invalid content type errors', async (t: Test) => {
-      await buildServer()
+    t.test('should correctly parse invalid content type errors', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({
+      const response = await server.inject({
         method: 'POST',
         url: '/bad-gateway',
         headers: { 'content-type': 'image/png' }
@@ -350,10 +344,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should correctly parse missing body errors', async (t: Test) => {
-      await buildServer()
+    t.test('should correctly parse missing body errors', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({
+      const response = await server.inject({
         method: 'POST',
         url: '/bad-gateway',
         headers: { 'content-type': 'application/json' }
@@ -367,10 +361,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should correctly parse malformed body errors', async (t: Test) => {
-      await buildServer()
+    t.test('should correctly parse malformed body errors', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({
+      const response = await server.inject({
         method: 'POST',
         url: '/bad-gateway',
         headers: { 'content-type': 'application/json' },
@@ -385,12 +379,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should correctly return server errors with masking explicitily enabled', async (t: Test) => {
-      await buildServer()
+    t.test('should correctly return server errors with masking explicitily enabled', async t => {
+      const server = buildServer({ hideUnhandledErrors: true })
 
-      await buildServer({ hideUnhandledErrors: true })
-
-      const response = await server!.inject({ method: 'GET', url: '/error' })
+      const response = await server.inject({ method: 'GET', url: '/error' })
 
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
       t.same(JSON.parse(response.payload), {
@@ -400,10 +392,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should correctly return server errors with masking explicitily disabled', async (t: Test) => {
-      await buildServer()
+    t.test('should correctly return server errors with masking explicitily disabled', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({ method: 'GET', url: '/error' })
+      const response = await server.inject({ method: 'GET', url: '/error' })
 
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
       t.equal(response.headers['x-custom-header'], 'Custom-Value')
@@ -423,11 +415,11 @@ t.test('Plugin', (t: Test) => {
     t.end()
   })
 
-  t.test('Handling validation errors', (t: Test) => {
-    t.test('should validate params', async (t: Test) => {
-      await buildServer()
+  t.test('Handling validation errors', t => {
+    t.test('should validate params', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({
+      const response = await server.inject({
         method: 'POST',
         url: '/validated/abc',
         headers: { 'x-header': '123' },
@@ -443,10 +435,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should validate querystring', async (t: Test) => {
-      await buildServer()
+    t.test('should validate querystring', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({
+      const response = await server.inject({
         method: 'POST',
         url: '/validated/123',
         query: { val: '13', val2: 'asd' },
@@ -462,10 +454,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should validate headers', async (t: Test) => {
-      await buildServer()
+    t.test('should validate headers', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({ method: 'POST', url: '/validated/123', payload: [] })
+      const response = await server.inject({ method: 'POST', url: '/validated/123', payload: [] })
 
       t.equal(response.statusCode, BAD_REQUEST)
       t.same(JSON.parse(response.payload), {
@@ -476,10 +468,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should validate body', async (t: Test) => {
-      await buildServer()
+    t.test('should validate body', async t => {
+      const server = buildServer()
 
-      const response = await server!.inject({ method: 'POST', url: '/validated/123' })
+      const response = await server.inject({ method: 'POST', url: '/validated/123' })
 
       t.equal(response.statusCode, BAD_REQUEST)
       t.same(JSON.parse(response.payload), {
@@ -490,10 +482,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should not convert validation if option is disabled', async (t: Test) => {
-      await buildServer({ convertValidationErrors: false })
+    t.test('should not convert validation if option is disabled', async t => {
+      const server = buildServer({ convertValidationErrors: false })
 
-      const response = await server!.inject({
+      const response = await server.inject({
         method: 'POST',
         url: '/validated/abc',
         headers: { 'x-header': '123' },
@@ -528,11 +520,11 @@ t.test('Plugin', (t: Test) => {
     t.end()
   })
 
-  t.test('Using standalone error handling', (t: Test) => {
-    t.test("should not return the error's properties by masking server side errors", async (t: Test) => {
-      await buildStandaloneServer()
+  t.test('Using standalone error handling', t => {
+    t.test("should not return the error's properties by masking server side errors", async t => {
+      const server = buildStandaloneServer()
 
-      const response = await standaloneServer!.inject({ method: 'GET', url: '/error/123' })
+      const response = await server.inject({ method: 'GET', url: '/error/123' })
 
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
 
@@ -547,10 +539,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should return error codes', async (t: Test) => {
-      await buildStandaloneServer()
+    t.test('should return error codes', async t => {
+      const server = buildStandaloneServer()
 
-      const response = await standaloneServer!.inject({ method: 'GET', url: '/error/code' })
+      const response = await server.inject({ method: 'GET', url: '/error/code' })
 
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
 
@@ -566,10 +558,10 @@ t.test('Plugin', (t: Test) => {
       })
     })
 
-    t.test('should not convert validation errors', async (t: Test) => {
-      await buildStandaloneServer()
+    t.test('should not convert validation errors', async t => {
+      const server = buildStandaloneServer()
 
-      const response = await standaloneServer!.inject({ method: 'GET', url: '/error/abc' })
+      const response = await server.inject({ method: 'GET', url: '/error/abc' })
 
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
 

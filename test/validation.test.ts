@@ -8,12 +8,8 @@ import t from 'tap'
 import { convertValidationErrors, niceJoin, plugin as fastifyErrorProperties } from '../src'
 import { ValidationResult } from '../src/validation'
 
-type Test = typeof t
-
-let server: FastifyInstance | null
-
-async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
-  server = fastify()
+function buildServer(options: FastifyPluginOptions = {}): FastifyInstance {
+  const server = fastify()
   server.register(fastifyErrorProperties, options)
 
   server.get('/correct', {
@@ -29,8 +25,8 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
         }
       }
     },
-    async handler(): Promise<object> {
-      return { a: '1' }
+    handler(_: FastifyRequest, reply: FastifyReply) {
+      reply.send({ a: '1' })
     }
   })
 
@@ -47,9 +43,9 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
         }
       }
     },
-    async handler(_r: FastifyRequest, reply: FastifyReply): Promise<object> {
+    handler(_: FastifyRequest, reply: FastifyReply) {
       reply.code(ACCEPTED)
-      return { a: 1 }
+      reply.send({ a: 1 })
     }
   })
 
@@ -71,8 +67,8 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
         }
       }
     },
-    async handler(): Promise<object> {
-      return { a: 1, c: 2 }
+    handler(_: FastifyRequest, reply: FastifyReply) {
+      reply.send({ a: 1, c: 2 })
     }
   })
 
@@ -94,9 +90,9 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
         }
       }
     },
-    async handler(_r: FastifyRequest, reply: FastifyReply): Promise<object> {
+    handler(_: FastifyRequest, reply: FastifyReply) {
       reply.code(ACCEPTED)
-      return { a: 1 }
+      reply.send({ a: 1 })
     }
   })
 
@@ -118,23 +114,23 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
         }
       }
     },
-    async handler(_r: FastifyRequest, reply: FastifyReply): Promise<string> {
+    handler(_: FastifyRequest, reply: FastifyReply) {
       reply.code(ACCEPTED)
-      return 'ACCEPTED'
+      reply.send('ACCEPTED')
     }
   })
 
   server.get('/no-schema', {
-    async handler(): Promise<object> {
-      return { a: 1, c: 2 }
+    handler(_: FastifyRequest, reply: FastifyReply) {
+      reply.send({ a: 1, c: 2 })
     }
   })
 
   return server
 }
 
-t.test('Validation', (t: Test) => {
-  t.test('niceJoin utility method', (t: Test) => {
+t.test('Validation', t => {
+  t.test('niceJoin utility method', t => {
     t.equal(niceJoin([]), '')
     t.equal(niceJoin(['a']), 'a')
     t.equal(niceJoin(['b', 'c'], '@'), 'b@c')
@@ -142,7 +138,7 @@ t.test('Validation', (t: Test) => {
     t.end()
   })
 
-  t.test('should correctly parse validation errors', (t: Test) => {
+  t.test('should correctly parse validation errors', t => {
     const ajv = new Ajv({
       removeAdditional: false,
       useDefaults: true,
@@ -386,20 +382,20 @@ t.test('Validation', (t: Test) => {
   t.end()
 })
 
-t.test('Response Validation', (t: Test) => {
-  t.test('should allow valid endpoints', async (t: Test) => {
-    await buildServer()
+t.test('Response Validation', t => {
+  t.test('should allow valid endpoints', async t => {
+    const server = buildServer()
 
-    const response = await server!.inject({ method: 'GET', url: '/correct' })
+    const response = await server.inject({ method: 'GET', url: '/correct' })
 
     t.equal(response.statusCode, OK)
     t.same(JSON.parse(response.payload), { a: '1' })
   })
 
-  t.test('should validate the response code', async (t: Test) => {
-    await buildServer()
+  t.test('should validate the response code', async t => {
+    const server = buildServer()
 
-    const response = await server!.inject({ method: 'GET', url: '/bad-code' })
+    const response = await server.inject({ method: 'GET', url: '/bad-code' })
 
     t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
     t.same(JSON.parse(response.payload), {
@@ -409,10 +405,10 @@ t.test('Response Validation', (t: Test) => {
     })
   })
 
-  t.test('should validate the response body', async (t: Test) => {
-    await buildServer()
+  t.test('should validate the response body', async t => {
+    const server = buildServer()
 
-    const response = await server!.inject({ method: 'GET', url: '/bad-body' })
+    const response = await server.inject({ method: 'GET', url: '/bad-body' })
 
     t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
     t.same(JSON.parse(response.payload), {
@@ -429,7 +425,7 @@ t.test('Response Validation', (t: Test) => {
     })
   })
 
-  t.test('should support shared schema', async (t: Test) => {
+  t.test('should support shared schema', async t => {
     const sharedServer = fastify()
 
     sharedServer.register(fastifyErrorProperties, { convertResponsesValidationErrors: true })
@@ -449,9 +445,9 @@ t.test('Response Validation', (t: Test) => {
           [OK]: { $ref: '#ok' }
         }
       },
-      async handler(_r: FastifyRequest, reply: FastifyReply): Promise<object> {
+      handler(_r: FastifyRequest, reply: FastifyReply) {
         reply.code(ACCEPTED)
-        return { a: 1 }
+        reply.send({ a: 1 })
       }
     })
 
@@ -465,47 +461,47 @@ t.test('Response Validation', (t: Test) => {
     })
   })
 
-  t.test('should allow everything no response schema is defined', async (t: Test) => {
-    await buildServer()
+  t.test('should allow everything no response schema is defined', async t => {
+    const server = buildServer()
 
-    const response = await server!.inject({ method: 'GET', url: '/no-schema' })
+    const response = await server.inject({ method: 'GET', url: '/no-schema' })
 
     t.equal(response.statusCode, OK)
     t.same(JSON.parse(response.payload), { a: 1, c: 2 })
   })
 
-  t.test('should allow responses which are missing in the schema if explicitily enabled', async (t: Test) => {
-    await buildServer({ allowUndeclaredResponses: true })
+  t.test('should allow responses which are missing in the schema if explicitily enabled', async t => {
+    const server = buildServer({ allowUndeclaredResponses: true })
 
-    const response = await server!.inject({ method: 'GET', url: '/undeclared-response' })
+    const response = await server.inject({ method: 'GET', url: '/undeclared-response' })
 
     t.equal(response.statusCode, ACCEPTED)
     t.same(JSON.parse(response.payload), { a: 1 })
   })
 
-  t.test('should allow everything if the payload is not JSON', async (t: Test) => {
-    await buildServer()
+  t.test('should allow everything if the payload is not JSON', async t => {
+    const server = buildServer()
 
-    const response = await server!.inject({ method: 'GET', url: '/no-json' })
+    const response = await server.inject({ method: 'GET', url: '/no-json' })
 
     t.equal(response.statusCode, ACCEPTED)
     t.match(response.headers['content-type'], /^text\/plain/)
     t.equal(response.payload, 'ACCEPTED')
   })
 
-  t.test('should allow everything if explicitily disabled', async (t: Test) => {
-    await buildServer({ convertResponsesValidationErrors: false })
+  t.test('should allow everything if explicitily disabled', async t => {
+    const server = buildServer({ convertResponsesValidationErrors: false })
 
-    const response = await server!.inject({ method: 'GET', url: '/bad-code' })
+    const response = await server.inject({ method: 'GET', url: '/bad-code' })
 
     t.equal(response.statusCode, ACCEPTED)
     t.same(JSON.parse(response.payload), { a: 1 })
   })
 
-  t.test('should allow everything if explicitily enabled', async (t: Test) => {
-    await buildServer({ convertResponsesValidationErrors: true })
+  t.test('should allow everything if explicitily enabled', async t => {
+    const server = buildServer({ convertResponsesValidationErrors: true })
 
-    const response = await server!.inject({ method: 'GET', url: '/bad-code' })
+    const response = await server.inject({ method: 'GET', url: '/bad-code' })
 
     t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
     t.same(JSON.parse(response.payload), {
@@ -515,7 +511,7 @@ t.test('Response Validation', (t: Test) => {
     })
   })
 
-  t.test('should support the customization of the response validator', async (t: Test) => {
+  t.test('should support the customization of the response validator', async t => {
     const server = fastify()
 
     let compiler: Ajv | undefined
@@ -541,9 +537,9 @@ t.test('Response Validation', (t: Test) => {
           }
         }
       },
-      async handler(_r: FastifyRequest, reply: FastifyReply): Promise<object> {
+      handler(_r: FastifyRequest, reply: FastifyReply) {
         reply.code(ACCEPTED)
-        return { a: 1 }
+        reply.send({ a: 1 })
       }
     })
 

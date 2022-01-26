@@ -1,4 +1,4 @@
-import { FastifyError, FastifyInstance, FastifyPluginOptions, FastifyRequest } from 'fastify'
+import { FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
 import { handleErrors, handleNotFoundError } from './handlers'
 import { Configuration, kHttpErrorsEnhancedConfiguration, kHttpErrorsEnhancedResponseValidations } from './interfaces'
@@ -23,8 +23,10 @@ export const plugin = fastifyPlugin(
     instance.decorate(kHttpErrorsEnhancedConfiguration, null)
     instance.decorateRequest(kHttpErrorsEnhancedConfiguration, null)
 
-    instance.addHook('onRequest', async (request: FastifyRequest) => {
+    instance.addHook('onRequest', (request, _, done) => {
       request[kHttpErrorsEnhancedConfiguration] = configuration
+
+      done()
     })
 
     instance.setErrorHandler(handleErrors)

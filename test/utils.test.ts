@@ -3,10 +3,8 @@
 import t from 'tap'
 import { get, upperFirst } from '../src/utils'
 
-type Test = typeof t
-
-t.test('Utils', (t: Test) => {
-  t.test('.upperFirst should correctly convert strings', (t: Test) => {
+t.test('Utils', t => {
+  t.test('.upperFirst should correctly convert strings', t => {
     t.equal(upperFirst('abc'), 'Abc')
     t.equal(upperFirst('aBC'), 'ABC')
     t.equal(upperFirst(''), '')
@@ -15,7 +13,7 @@ t.test('Utils', (t: Test) => {
     t.end()
   })
 
-  t.test('.get should correctly return paths', (t: Test) => {
+  t.test('.get should correctly return paths', t => {
     const target = {
       a: [{ b: { c: 1 } }],
       b: null

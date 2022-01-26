@@ -51,7 +51,7 @@ export const validationMessagesFormatters: { [key: string]: ValidationFormatter 
   hostname: () => 'must be a valid hostname',
   ipv4: () => 'must be a valid IPv4',
   ipv6: () => 'must be a valid IPv6',
-  paramType: (type: string) => {
+  paramType: type => {
     switch (type) {
       case 'integer':
         return 'must be a valid integer number'
@@ -68,8 +68,8 @@ export const validationMessagesFormatters: { [key: string]: ValidationFormatter 
     }
   },
   presentString: () => 'must be a non empty string',
-  minimum: (min: number) => `must be a number greater than or equal to ${min}`,
-  maximum: (max: number) => `must be a number less than or equal to ${max}`,
+  minimum: min => `must be a number greater than or equal to ${min}`,
+  maximum: max => `must be a number less than or equal to ${max}`,
   minimumProperties(min: number): string {
     return min === 1 ? 'cannot be a empty object' : `must be a object with at least ${min} properties`
   },
@@ -82,16 +82,16 @@ export const validationMessagesFormatters: { [key: string]: ValidationFormatter 
   maximumItems(max: number): string {
     return max === 0 ? 'must be a empty array' : `must be an array with at most ${max} items`
   },
-  enum: (values: Array<string>) =>
+  enum: values =>
     `must be one of the following values: ${niceJoin(
       values.map((f: string) => `"${f}"`),
       ' or '
     )}`,
-  pattern: (pattern: string) => `must match pattern "${pattern.replace(/\(\?:/g, '(')}"`,
-  invalidResponseCode: (code: number) => `This endpoint cannot respond with HTTP status ${code}.`,
-  invalidResponse: (code: number) =>
+  pattern: pattern => `must match pattern "${pattern.replace(/\(\?:/g, '(')}"`,
+  invalidResponseCode: code => `This endpoint cannot respond with HTTP status ${code}.`,
+  invalidResponse: code =>
     `The response returned from the endpoint violates its specification for the HTTP status ${code}.`,
-  invalidFormat: (format: string) => `must match format "${format}" (format)`
+  invalidFormat: format => `must match format "${format}" (format)`
 }
 
 export function convertValidationErrors(
@@ -227,17 +227,18 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
   ])
 
   // Note that this hook is not called for non JSON payloads therefore validation is not possible in such cases
-  route.preSerialization = async function (
+  route.preSerialization = function (
     this: FastifyInstance,
     request: FastifyRequest,
     reply: FastifyReply,
-    payload: any
-  ): Promise<any> {
+    payload: any,
+    done: (err: Error | null, payload?: any) => void
+  ): void {
     const statusCode = reply.raw.statusCode
 
     // Never validate error 500
     if (statusCode === INTERNAL_SERVER_ERROR) {
-      return payload
+      return done(null, payload)
     }
 
     // No validator, it means the HTTP status is not allowed
@@ -245,23 +246,24 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
 
     if (!validator) {
       if (request[kHttpErrorsEnhancedConfiguration]!.allowUndeclaredResponses) {
-        return payload
+        return done(null, payload)
       }
 
-      throw new InternalServerError(validationMessagesFormatters.invalidResponseCode(statusCode))
+      return done(new InternalServerError(validationMessagesFormatters.invalidResponseCode(statusCode)))
     }
 
     // Now validate the payload
     const valid = validator(payload)
 
     if (!valid) {
-      console.log(validator.errors)
-      throw new InternalServerError(validationMessagesFormatters.invalidResponse(statusCode), {
-        failedValidations: convertValidationErrors('response', payload, validator.errors as Array<ValidationResult>)
-      })
+      return done(
+        new InternalServerError(validationMessagesFormatters.invalidResponse(statusCode), {
+          failedValidations: convertValidationErrors('response', payload, validator.errors as Array<ValidationResult>)
+        })
+      )
     }
 
-    return payload
+    done(null, payload)
   }
 }
 

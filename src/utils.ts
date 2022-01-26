@@ -7,7 +7,7 @@ export function upperFirst(source: any): string {
 }
 
 export function get<T>(target: any, path: string): T {
-  const tokens = path.split('.').map((t: string) => t.trim())
+  const tokens = path.split('.').map(t => t.trim())
 
   for (const token of tokens) {
     if (typeof target === 'undefined' || target === null) {
