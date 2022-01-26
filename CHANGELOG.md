@@ -1,3 +1,9 @@
+### 2022-01-26 / 3.0.3
+
+- chore: Updated dependencies and linted code.
+- chore: Updated dependencies.
+- chore: Removed useless file.
+
 ### 2021-11-17 / 3.0.2
 
 
