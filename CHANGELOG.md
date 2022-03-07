@@ -1,3 +1,8 @@
+### 2022-03-07 / 3.0.4
+
+- fix: Added missing files.
+- chore: Updated build system.
+
 ### 2022-01-26 / 3.0.3
 
 - chore: Updated dependencies and linted code.
