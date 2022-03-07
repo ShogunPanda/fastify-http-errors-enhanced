@@ -1,11 +1,6 @@
 import Ajv from 'ajv'
-import {
-  FastifyInstance,
-  FastifyReply,
-  FastifyRequest,
-  RouteOptions,
-  ValidationResult as FastifyValidationResult
-} from 'fastify'
+import * as fastify from 'fastify'
+import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import { InternalServerError, INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
 import {
   Configuration,
@@ -18,7 +13,7 @@ import {
 } from './interfaces.js'
 import { get } from './utils.js'
 
-export interface ValidationResult extends FastifyValidationResult {
+export interface ValidationResult extends fastify.ValidationResult {
   dataPath: any
   instancePath: string
 }
