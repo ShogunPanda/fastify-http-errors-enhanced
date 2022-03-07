@@ -11,7 +11,7 @@ import {
   UNSUPPORTED_MEDIA_TYPE
 } from 'http-errors-enhanced'
 import t from 'tap'
-import { handleErrors, plugin as fastifyHttpErrorsEnhanced } from '../src'
+import { handleErrors, plugin as fastifyHttpErrorsEnhanced } from '../src/index.js'
 
 type Callback = () => void
 
@@ -314,7 +314,7 @@ t.test('Plugin', t => {
         t.equal(response.headers['x-custom-header'], 'Custom-Value')
 
         const payload = JSON.parse(response.payload)
-        t.match(payload.stack[0], /^(?:Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\))$/)
+        t.match(payload.stack[0], /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
         delete payload.stack
 
         t.same(payload, {
@@ -401,7 +401,7 @@ t.test('Plugin', t => {
       t.equal(response.headers['x-custom-header'], 'Custom-Value')
 
       const payload = JSON.parse(response.payload)
-      t.match(payload.stack[0], /^(?:Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\))$/)
+      t.match(payload.stack[0], /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
       delete payload.stack
 
       t.same(payload, {
@@ -529,7 +529,7 @@ t.test('Plugin', t => {
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
 
       const payload = JSON.parse(response.payload)
-      t.match(payload.stack[0], /^(?:Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\))$/)
+      t.match(payload.stack[0], /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
       delete payload.stack
 
       t.same(payload, {
@@ -547,7 +547,7 @@ t.test('Plugin', t => {
       t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
 
       const payload = JSON.parse(response.payload)
-      t.match(payload.stack[0], /^(?:Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\))$/)
+      t.match(payload.stack[0], /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
       delete payload.stack
 
       t.same(payload, {

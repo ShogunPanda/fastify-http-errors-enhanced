@@ -15,8 +15,8 @@ import {
   ResponseSchemas,
   ValidationFormatter,
   Validations
-} from './interfaces'
-import { get } from './utils'
+} from './interfaces.js'
+import { get } from './utils.js'
 
 export interface ValidationResult extends FastifyValidationResult {
   dataPath: any
@@ -32,7 +32,7 @@ export function niceJoin(array: Array<string>, lastSeparator: string = ' and ', 
     case 2:
       return array.join(lastSeparator)
     default:
-      return array.slice(0, array.length - 1).join(separator) + lastSeparator + array[array.length - 1]
+      return array.slice(0, -1).join(separator) + lastSeparator + array.at(-1)!
   }
 }
 
@@ -87,7 +87,7 @@ export const validationMessagesFormatters: { [key: string]: ValidationFormatter 
       values.map((f: string) => `"${f}"`),
       ' or '
     )}`,
-  pattern: pattern => `must match pattern "${pattern.replace(/\(\?:/g, '(')}"`,
+  pattern: pattern => `must match pattern "${pattern.replaceAll('(?:', '(')}"`,
   invalidResponseCode: code => `This endpoint cannot respond with HTTP status ${code}.`,
   invalidResponse: code =>
     `The response returned from the endpoint violates its specification for the HTTP status ${code}.`,
@@ -116,13 +116,13 @@ export function convertValidationErrors(
     let key = e.dataPath ?? e.instancePath /* c8 ignore next */ ?? ''
 
     if (key.startsWith('.')) {
-      key = key.substring(1)
+      key = key.slice(1)
     }
 
     // Remove useless quotes
     /* c8 ignore next 3 */
     if (key.startsWith('[') && key.endsWith(']')) {
-      key = key.substring(1, key.length - 1)
+      key = key.slice(1, -1)
     }
 
     // Depending on the type
@@ -165,11 +165,10 @@ export function convertValidationErrors(
         pattern = e.params.pattern as string
         value = get<string>(data, key)
 
-        if (pattern === '.+' && !value) {
-          message = validationMessagesFormatters.presentString()
-        } else {
-          message = validationMessagesFormatters.pattern(e.params.pattern)
-        }
+        message =
+          pattern === '.+' && !value
+            ? validationMessagesFormatters.presentString()
+            : validationMessagesFormatters.pattern(e.params.pattern)
 
         break
       case 'format':
@@ -192,8 +191,8 @@ export function convertValidationErrors(
 
     // Remove useless quotes
     /* c8 ignore next 3 */
-    if (key.match(/(?:^['"])(?:[^.]+)(?:['"]$)/)) {
-      key = key.substring(1, key.length - 1)
+    if (/^["'][^.]+["']$/.test(key)) {
+      key = key.slice(1, -1)
     }
 
     // Fix empty properties

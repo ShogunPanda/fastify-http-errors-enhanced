@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
 import t from 'tap'
-import { get, upperFirst } from '../src/utils'
+import { get, upperFirst } from '../src/utils.js'
 
 t.test('Utils', t => {
   t.test('.upperFirst should correctly convert strings', t => {

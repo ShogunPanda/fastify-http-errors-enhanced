@@ -1,12 +1,16 @@
 import { FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
-import { handleErrors, handleNotFoundError } from './handlers'
-import { Configuration, kHttpErrorsEnhancedConfiguration, kHttpErrorsEnhancedResponseValidations } from './interfaces'
-import { addResponseValidation, compileResponseValidationSchema } from './validation'
+import { handleErrors, handleNotFoundError } from './handlers.js'
+import {
+  Configuration,
+  kHttpErrorsEnhancedConfiguration,
+  kHttpErrorsEnhancedResponseValidations
+} from './interfaces.js'
+import { addResponseValidation, compileResponseValidationSchema } from './validation.js'
 
-export * from './handlers'
-export * from './interfaces'
-export { convertValidationErrors, niceJoin, validationMessagesFormatters } from './validation'
+export * from './handlers.js'
+export * from './interfaces.js'
+export { convertValidationErrors, niceJoin, validationMessagesFormatters } from './validation.js'
 
 export const plugin = fastifyPlugin(
   function (instance: FastifyInstance, options: FastifyPluginOptions, done: (error?: FastifyError) => void): void {

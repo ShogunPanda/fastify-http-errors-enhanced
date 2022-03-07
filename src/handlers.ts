@@ -10,9 +10,9 @@ import {
   serializeError,
   UnsupportedMediaTypeError
 } from 'http-errors-enhanced'
-import { GenericObject, kHttpErrorsEnhancedConfiguration, NodeError, RequestSection } from './interfaces'
-import { upperFirst } from './utils'
-import { convertValidationErrors, validationMessagesFormatters, ValidationResult } from './validation'
+import { GenericObject, kHttpErrorsEnhancedConfiguration, NodeError, RequestSection } from './interfaces.js'
+import { upperFirst } from './utils.js'
+import { convertValidationErrors, validationMessagesFormatters, ValidationResult } from './validation.js'
 
 export function handleNotFoundError(request: FastifyRequest, reply: FastifyReply): void {
   handleErrors(new NotFoundError('Not found.'), request, reply)

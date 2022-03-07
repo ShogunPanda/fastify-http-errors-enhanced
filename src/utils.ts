@@ -3,7 +3,7 @@ export function upperFirst(source: any): string {
     return source
   }
 
-  return source[0].toUpperCase() + source.substring(1)
+  return source[0].toUpperCase() + source.slice(1)
 }
 
 export function get<T>(target: any, path: string): T {
@@ -16,12 +16,8 @@ export function get<T>(target: any, path: string): T {
       break
     }
 
-    const index = token.match(/^(\d+)|(?:\[(\d+)\])$/)
-    if (index) {
-      target = target[parseInt(index[1] ?? index[2], 10)]
-    } else {
-      target = target[token]
-    }
+    const index = token.match(/^(\d+)|\[(\d+)]$/)
+    target = index ? target[Number.parseInt(index[1] ?? index[2], 10)] : target[token]
   }
 
   return target
