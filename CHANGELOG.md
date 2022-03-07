@@ -1,3 +1,7 @@
+### 2022-03-07 / 3.0.6
+
+- fix: Fixed build.
+
 ### 2022-03-07 / 3.0.5
 
 - chore: Updated dependencies.
