@@ -1,4 +1,5 @@
 import Ajv, { ValidateFunction } from 'ajv'
+import { FastifyError } from 'fastify'
 
 export const kHttpErrorsEnhancedConfiguration = Symbol('fastify-http-errors-enhanced-configuration')
 export const kHttpErrorsEnhancedResponseValidations = Symbol('fastify-http-errors-enhanced-response-validation')
@@ -8,6 +9,7 @@ export interface Configuration {
   convertValidationErrors?: boolean
   allowUndeclaredResponses?: boolean
   responseValidatorCustomizer?: (ajv: Ajv) => void
+  preHandler?: (error: FastifyError | Error) => Error
 }
 
 declare module 'fastify' {

@@ -21,7 +21,8 @@ export const plugin = fastifyPlugin(
       hideUnhandledErrors: options.hideUnhandledErrors ?? isProduction,
       convertValidationErrors: options.convertValidationErrors ?? true,
       responseValidatorCustomizer: options.responseValidatorCustomizer,
-      allowUndeclaredResponses: options.allowUndeclaredResponses ?? false
+      allowUndeclaredResponses: options.allowUndeclaredResponses ?? false,
+      preHandler: typeof options.preHandler === 'function' ? options.preHandler : undefined
     }
 
     instance.decorate(kHttpErrorsEnhancedConfiguration, null)

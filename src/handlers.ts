@@ -36,6 +36,10 @@ export function handleValidationError(error: FastifyError, request: FastifyReque
 }
 
 export function handleErrors(error: FastifyError | Error, request: FastifyRequest, reply: FastifyReply): void {
+  if (request[kHttpErrorsEnhancedConfiguration]?.preHandler) {
+    error = request[kHttpErrorsEnhancedConfiguration]!.preHandler!(error)
+  }
+
   // It is a generic error, handle it
   const code = (error as NodeError).code
 
