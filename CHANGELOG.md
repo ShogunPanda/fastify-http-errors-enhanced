@@ -1,3 +1,10 @@
+### 2022-07-18 / 3.1.0
+
+- fix: Fixed assertion.
+- chore: Updated dependencies.
+- feat: Added preHandler option.
+- chore: Use sourcemaps with swc
+
 ### 2022-03-07 / 3.0.6
 
 - fix: Fixed build.
