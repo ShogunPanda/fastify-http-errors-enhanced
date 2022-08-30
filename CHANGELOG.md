@@ -1,3 +1,7 @@
+### 2022-08-30 / 4.0.2
+
+- chore: Updated dependencies.
+
 ### 2022-08-30 / 4.0.1
 
 - fix: Improved README.
