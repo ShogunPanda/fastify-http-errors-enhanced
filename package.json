@@ -43,10 +43,10 @@
   "dependencies": {
     "ajv": "^8.11.0",
     "fastify-plugin": "^4.2.1",
-    "http-errors-enhanced": "^1.0.7"
+    "http-errors-enhanced": "^1.0.8"
   },
   "devDependencies": {
-    "@cowtech/eslint-config": "^8.7.1",
+    "@cowtech/eslint-config": "^8.7.2",
     "@swc/cli": "^0.1.57",
     "@swc/core": "^1.2.245",
     "@types/node": "^18.7.14",
