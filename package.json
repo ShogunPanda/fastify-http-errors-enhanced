@@ -1,6 +1,6 @@
 {
   "name": "fastify-http-errors-enhanced",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "A error handling plugin for Fastify that uses enhanced HTTP errors.",
   "homepage": "https://sw.cowtech.it/fastify-http-errors-enhanced",
   "repository": "github:ShogunPanda/fastify-http-errors-enhanced",
