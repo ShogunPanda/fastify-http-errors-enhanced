@@ -1,3 +1,7 @@
+### 2022-08-30 / 4.0.0
+
+- feat: Updated to fastify 4.
+
 ### 2022-07-18 / 3.1.0
 
 - fix: Fixed assertion.
