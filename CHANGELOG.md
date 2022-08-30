@@ -1,3 +1,7 @@
+### 2022-08-30 / 4.0.1
+
+- fix: Improved README.
+
 ### 2022-08-30 / 4.0.0
 
 - feat: Updated to fastify 4.
