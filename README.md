@@ -51,7 +51,9 @@ import fastifyHttpErrorsEnhanced from 'fastify-http-errors-enhanced'
 import { NotFoundError } from 'http-errors-enhanced'
 
 const server = fastify()
-server.register(fastifyHttpErrorsEnhanced)
+
+// Note that await is mandatory here otherwise response validation will be lost
+await server.register(fastifyHttpErrorsEnhanced)
 
 server.get('/invalid', {
   handler: async function (request, reply) {
@@ -62,7 +64,7 @@ server.get('/invalid', {
   }
 })
 
-server.listen(3000, err => {
+server.listen({ port: 3000 }, err => {
   if (err) {
     throw err
   }
@@ -109,7 +111,7 @@ import fastifyHttpErrorsEnhanced from 'fastify-http-errors-enhanced'
 import { NotFoundError } from 'http-errors-enhanced'
 import createError from 'http-errors'
 
-server.register(fastifyHttpErrorsEnhanced, { hideUnhandledErrors: false })
+await server.register(fastifyHttpErrorsEnhanced, { hideUnhandledErrors: false })
 
 server.get('/invalid', {
   handler(request, reply) {
@@ -119,7 +121,7 @@ server.get('/invalid', {
   }
 })
 
-server.listen(3000, err => {
+server.listen({ port: 3000 }, err => {
   if (err) {
     throw err
   }

@@ -110,7 +110,7 @@ export function convertValidationErrors(
     // Normalize the key
     let key = e.dataPath ?? e.instancePath /* c8 ignore next */ ?? ''
 
-    if (key.startsWith('.')) {
+    if (/^[./]/.test(key)) {
       key = key.slice(1)
     }
 
@@ -181,7 +181,7 @@ export function convertValidationErrors(
 
     // No custom message was found, default to input one replacing the starting verb and adding some path info
     if (!message.length) {
-      message = `${e.message.replace(/^should/, 'must')} (${e.keyword})`
+      message = `${e.message?.replace(/^should/, 'must')} (${e.keyword})`
     }
 
     // Remove useless quotes

@@ -5,7 +5,7 @@ import { INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
 import t from 'tap'
 import { plugin as fastifyHttpErrorsEnhanced } from '../src/index.js'
 
-function buildServer(options: FastifyPluginOptions = {}): FastifyInstance {
+async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
   const server = fastify({
     ajv: {
       customOptions: {
@@ -17,7 +17,7 @@ function buildServer(options: FastifyPluginOptions = {}): FastifyInstance {
     }
   })
 
-  server.register(fastifyHttpErrorsEnhanced, options)
+  await server.register(fastifyHttpErrorsEnhanced, options)
 
   server.get('/error', {
     handler() {
@@ -32,7 +32,7 @@ function buildServer(options: FastifyPluginOptions = {}): FastifyInstance {
 }
 
 t.test('should correctly allow preprocessing of error before executing the handler', async t => {
-  const server = buildServer({
+  const server = await buildServer({
     preHandler(error: FastifyError | Error) {
       Object.defineProperty(error, 'preHandlerExecuted', { enumerable: true, value: true })
       return error

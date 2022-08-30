@@ -46,7 +46,7 @@ export const plugin = fastifyPlugin(
 
     done()
   },
-  { name: 'fastify-http-errors-enhanced' }
+  { name: 'fastify-http-errors-enhanced', fastify: '4.x' }
 )
 
 export default plugin

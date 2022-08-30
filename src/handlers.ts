@@ -43,7 +43,7 @@ export function handleErrors(error: FastifyError | Error, request: FastifyReques
   // It is a generic error, handle it
   const code = (error as NodeError).code
 
-  if (!('statusCode' in error)) {
+  if (!('statusCode' in error) || 'validation' in error) {
     if ('validation' in error && request[kHttpErrorsEnhancedConfiguration]?.convertValidationErrors) {
       // If it is a validation error, convert errors to human friendly format
       error = handleValidationError(error, request)

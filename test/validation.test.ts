@@ -8,9 +8,10 @@ import t from 'tap'
 import { convertValidationErrors, niceJoin, plugin as fastifyErrorProperties } from '../src/index.js'
 import { ValidationResult } from '../src/validation.js'
 
-function buildServer(options: FastifyPluginOptions = {}): FastifyInstance {
+async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
   const server = fastify()
-  server.register(fastifyErrorProperties, options)
+
+  await server.register(fastifyErrorProperties, options)
 
   server.get('/correct', {
     schema: {
@@ -384,7 +385,7 @@ t.test('Validation', t => {
 
 t.test('Response Validation', t => {
   t.test('should allow valid endpoints', async t => {
-    const server = buildServer()
+    const server = await buildServer()
 
     const response = await server.inject({ method: 'GET', url: '/correct' })
 
@@ -393,7 +394,7 @@ t.test('Response Validation', t => {
   })
 
   t.test('should validate the response code', async t => {
-    const server = buildServer()
+    const server = await buildServer()
 
     const response = await server.inject({ method: 'GET', url: '/bad-code' })
 
@@ -406,7 +407,7 @@ t.test('Response Validation', t => {
   })
 
   t.test('should validate the response body', async t => {
-    const server = buildServer()
+    const server = await buildServer()
 
     const response = await server.inject({ method: 'GET', url: '/bad-body' })
 
@@ -428,9 +429,10 @@ t.test('Response Validation', t => {
   t.test('should support shared schema', async t => {
     const sharedServer = fastify()
 
-    sharedServer.register(fastifyErrorProperties, { convertResponsesValidationErrors: true })
+    await sharedServer.register(fastifyErrorProperties, { convertResponsesValidationErrors: true })
+
     sharedServer.addSchema({
-      $id: '#ok',
+      $id: 'ok',
       type: 'object',
       properties: {
         a: {
@@ -442,7 +444,7 @@ t.test('Response Validation', t => {
     sharedServer.get('/bad-code', {
       schema: {
         response: {
-          [OK]: { $ref: '#ok' }
+          [OK]: { $ref: 'ok#' }
         }
       },
       handler(_r: FastifyRequest, reply: FastifyReply) {
@@ -462,7 +464,7 @@ t.test('Response Validation', t => {
   })
 
   t.test('should allow everything no response schema is defined', async t => {
-    const server = buildServer()
+    const server = await buildServer()
 
     const response = await server.inject({ method: 'GET', url: '/no-schema' })
 
@@ -471,7 +473,7 @@ t.test('Response Validation', t => {
   })
 
   t.test('should allow responses which are missing in the schema if explicitily enabled', async t => {
-    const server = buildServer({ allowUndeclaredResponses: true })
+    const server = await buildServer({ allowUndeclaredResponses: true })
 
     const response = await server.inject({ method: 'GET', url: '/undeclared-response' })
 
@@ -480,7 +482,7 @@ t.test('Response Validation', t => {
   })
 
   t.test('should allow everything if the payload is not JSON', async t => {
-    const server = buildServer()
+    const server = await buildServer()
 
     const response = await server.inject({ method: 'GET', url: '/no-json' })
 
@@ -490,7 +492,7 @@ t.test('Response Validation', t => {
   })
 
   t.test('should allow everything if explicitily disabled', async t => {
-    const server = buildServer({ convertResponsesValidationErrors: false })
+    const server = await buildServer({ convertResponsesValidationErrors: false })
 
     const response = await server.inject({ method: 'GET', url: '/bad-code' })
 
@@ -499,7 +501,7 @@ t.test('Response Validation', t => {
   })
 
   t.test('should allow everything if explicitily enabled', async t => {
-    const server = buildServer({ convertResponsesValidationErrors: true })
+    const server = await buildServer({ convertResponsesValidationErrors: true })
 
     const response = await server.inject({ method: 'GET', url: '/bad-code' })
 
@@ -516,7 +518,7 @@ t.test('Response Validation', t => {
 
     let compiler: Ajv | undefined
 
-    server.register(fastifyErrorProperties, {
+    await server.register(fastifyErrorProperties, {
       convertResponsesValidationErrors: true,
       responseValidatorCustomizer(actual: Ajv) {
         compiler = actual
