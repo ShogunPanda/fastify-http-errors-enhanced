@@ -52,7 +52,14 @@ import { NotFoundError } from 'http-errors-enhanced'
 
 const server = fastify()
 
-// Note that await is mandatory here otherwise response validation will be lost
+/*
+Since fastify-http-errors-enhanced uses an onRoute hook, you have to either:
+
+* use `await register...`
+* wrap you routes definitions in a plugin
+
+See: https://www.fastify.io/docs/latest/Guides/Migration-Guide-V4/#synchronous-route-definitions
+*/
 await server.register(fastifyHttpErrorsEnhanced)
 
 server.get('/invalid', {
