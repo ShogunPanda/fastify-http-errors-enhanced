@@ -1,3 +1,8 @@
+### 2022-08-31 / 4.0.3
+
+- chore: Updated dependencies.
+- chore: Updated compilation configuration.
+
 ### 2022-08-30 / 4.0.2
 
 - chore: Updated dependencies.
