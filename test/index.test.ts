@@ -22,6 +22,12 @@ function routes(instance: FastifyInstance, _options: unknown, done: Callback): v
     }
   })
 
+  instance.post('/bad-gateway', {
+    handler() {
+      return Promise.reject(new BadGatewayError('This was the error message.'))
+    }
+  })
+
   instance.get('/headers', {
     handler() {
       const error = createError(NOT_FOUND, 'This was the error message.', {
