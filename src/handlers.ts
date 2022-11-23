@@ -30,7 +30,7 @@ export function handleValidationError(error: FastifyError, request: FastifyReque
     failedValidations: convertValidationErrors(
       section,
       Reflect.get(request, section),
-      error.validation! as Array<ValidationResult>
+      error.validation! as ValidationResult[]
     )
   })
 }

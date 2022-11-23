@@ -376,7 +376,7 @@ t.test('Validation', t => {
     const validate = ajv.compile(schema)
 
     t.notOk(validate(data))
-    t.same(convertValidationErrors('body', data, validate.errors as Array<ValidationResult>), expected)
+    t.same(convertValidationErrors('body', data, validate.errors as ValidationResult[]), expected)
     t.end()
   })
 

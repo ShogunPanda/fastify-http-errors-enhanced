@@ -14,7 +14,7 @@ export interface Configuration {
 
 declare module 'fastify' {
   interface FastifyInstance {
-    [kHttpErrorsEnhancedResponseValidations]: Array<[FastifyInstance, ResponseSchemas, Array<[string, object]>]>
+    [kHttpErrorsEnhancedResponseValidations]: [FastifyInstance, ResponseSchemas, [string, object][]][]
   }
 
   interface FastifyRequest {
@@ -40,4 +40,4 @@ export interface Validations {
   }
 }
 
-export type ValidationFormatter = (...args: Array<any>) => string
+export type ValidationFormatter = (...args: any[]) => string

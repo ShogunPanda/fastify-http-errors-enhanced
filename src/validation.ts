@@ -18,7 +18,7 @@ export interface ValidationResult extends fastify.ValidationResult {
   instancePath: string
 }
 
-export function niceJoin(array: Array<string>, lastSeparator: string = ' and ', separator: string = ', '): string {
+export function niceJoin(array: string[], lastSeparator: string = ' and ', separator: string = ', '): string {
   switch (array.length) {
     case 0:
       return ''
@@ -92,7 +92,7 @@ export const validationMessagesFormatters: { [key: string]: ValidationFormatter 
 export function convertValidationErrors(
   section: RequestSection,
   data: { [key: string]: unknown },
-  validationErrors: Array<ValidationResult>
+  validationErrors: ValidationResult[]
 ): Validations {
   const errors: { [key: string]: string } = {}
 
@@ -252,7 +252,7 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
     if (!valid) {
       return done(
         new InternalServerError(validationMessagesFormatters.invalidResponse(statusCode), {
-          failedValidations: convertValidationErrors('response', payload, validator.errors as Array<ValidationResult>)
+          failedValidations: convertValidationErrors('response', payload, validator.errors as ValidationResult[])
         })
       )
     }
