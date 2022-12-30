@@ -21,6 +21,7 @@ npm install fastify-http-errors-enhanced --save
 
 Register as a plugin, optional providing any of the following options:
 
+- `handle404Errors`: If to set an handler via `setNotFoundHandler`.
 - `hideUnhandledErrors`: If to hide unhandled server errors or returning to the client including stack information. Default is to hide errors when `NODE_ENV` environment variable is `production`.
 - `convertValidationErrors`: Convert validation errors to a structured human readable object. Default is `true`.
 - `convertResponsesValidationErrors`: Convert response validation errors to a structured human readable object. Default is to enable when `NODE_ENV` environment variable is different from `production`.

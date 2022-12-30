@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-import fastify, { FastifyInstance, FastifyPluginOptions } from 'fastify'
+import fastify, { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify'
 import {
   BadGatewayError,
   BAD_GATEWAY,
@@ -331,6 +331,40 @@ t.test('Plugin', t => {
         })
       }
     )
+
+    t.test('should correctly install a not found error handler', async t => {
+      const server = await buildServer()
+
+      const response = await server.inject({
+        method: 'POST',
+        url: '/not-found',
+        headers: { 'content-type': 'image/png' }
+      })
+
+      t.equal(response.statusCode, NOT_FOUND)
+      t.same(JSON.parse(response.payload), {
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Not found.'
+      })
+    })
+
+    t.test('should correctly skip installing a not found error handler', async t => {
+      const server = await buildServer({ handle404Errors: false })
+
+      server.setNotFoundHandler((_: FastifyRequest, reply: FastifyReply) => {
+        reply.code(444).send('NOT FOUND')
+      })
+
+      const response = await server.inject({
+        method: 'POST',
+        url: '/not-found',
+        headers: { 'content-type': 'image/png' }
+      })
+
+      t.equal(response.statusCode, 444)
+      t.same(response.payload, 'NOT FOUND')
+    })
 
     t.test('should correctly parse invalid content type errors', async t => {
       const server = await buildServer()

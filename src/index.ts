@@ -16,6 +16,7 @@ export const plugin = fastifyPlugin(
   function (instance: FastifyInstance, options: FastifyPluginOptions, done: (error?: FastifyError) => void): void {
     const isProduction = process.env.NODE_ENV === 'production'
     const convertResponsesValidationErrors = options.convertResponsesValidationErrors ?? !isProduction
+    const handle404Errors = options.handle404Errors ?? true
 
     const configuration: Configuration = {
       hideUnhandledErrors: options.hideUnhandledErrors ?? isProduction,
@@ -35,7 +36,10 @@ export const plugin = fastifyPlugin(
     })
 
     instance.setErrorHandler(handleErrors)
-    instance.setNotFoundHandler(handleNotFoundError)
+
+    if (handle404Errors) {
+      instance.setNotFoundHandler(handleNotFoundError)
+    }
 
     if (convertResponsesValidationErrors) {
       instance.decorate(kHttpErrorsEnhancedResponseValidations, [])
