@@ -1,3 +1,8 @@
+### 2022-12-30 / 4.1.0
+
+- feat: Allow skipping setNotFoundHandler.
+- chore: CI improvement
+
 ### 2022-11-23 / 4.0.6
 
 - chore: Updated dependencies.
