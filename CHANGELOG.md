@@ -1,3 +1,8 @@
+### 2023-10-06 / 4.2.0
+
+- feat: Added use422ForValidationErrors.
+- chore: Fixed compilation.
+
 ### 2022-12-30 / 4.1.0
 
 - feat: Allow skipping setNotFoundHandler.
