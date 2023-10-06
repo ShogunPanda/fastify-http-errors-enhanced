@@ -8,6 +8,7 @@ export interface Configuration {
   hideUnhandledErrors?: boolean
   convertValidationErrors?: boolean
   allowUndeclaredResponses?: boolean
+  use422ForValidationErrors?: boolean
   responseValidatorCustomizer?: (ajv: Ajv) => void
   preHandler?: (error: FastifyError | Error) => Error
 }

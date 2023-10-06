@@ -1,18 +1,19 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
 import {
-  addAdditionalProperties,
   BadRequestError,
   HttpError,
-  InternalServerError,
   INTERNAL_SERVER_ERROR,
-  messagesByCodes,
+  InternalServerError,
   NotFoundError,
-  serializeError,
-  UnsupportedMediaTypeError
+  UnprocessableEntityError,
+  UnsupportedMediaTypeError,
+  addAdditionalProperties,
+  messagesByCodes,
+  serializeError
 } from 'http-errors-enhanced'
-import { GenericObject, kHttpErrorsEnhancedConfiguration, NodeError, RequestSection } from './interfaces.js'
+import { GenericObject, NodeError, RequestSection, kHttpErrorsEnhancedConfiguration } from './interfaces.js'
 import { upperFirst } from './utils.js'
-import { convertValidationErrors, validationMessagesFormatters, ValidationResult } from './validation.js'
+import { ValidationResult, convertValidationErrors, validationMessagesFormatters } from './validation.js'
 
 export function handleNotFoundError(request: FastifyRequest, reply: FastifyReply): void {
   handleErrors(new NotFoundError('Not found.'), request, reply)
@@ -26,7 +27,11 @@ export function handleValidationError(error: FastifyError, request: FastifyReque
   */
   const section = error.message.match(/^\w+/)![0] as RequestSection
 
-  return new BadRequestError('One or more validations failed trying to process your request.', {
+  const Klass = request[kHttpErrorsEnhancedConfiguration]?.use422ForValidationErrors
+    ? UnprocessableEntityError
+    : BadRequestError
+
+  return new Klass('One or more validations failed trying to process your request.', {
     failedValidations: convertValidationErrors(
       section,
       Reflect.get(request, section),

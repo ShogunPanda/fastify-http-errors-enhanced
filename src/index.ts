@@ -23,6 +23,7 @@ export const plugin = fastifyPlugin(
       convertValidationErrors: options.convertValidationErrors ?? true,
       responseValidatorCustomizer: options.responseValidatorCustomizer,
       allowUndeclaredResponses: options.allowUndeclaredResponses ?? false,
+      use422ForValidationErrors: options.use422ForValidationErrors ?? false,
       preHandler: typeof options.preHandler === 'function' ? options.preHandler : undefined
     }
 

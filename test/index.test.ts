@@ -2,16 +2,17 @@
 
 import fastify, { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify'
 import {
-  BadGatewayError,
   BAD_GATEWAY,
   BAD_REQUEST,
-  createError,
+  BadGatewayError,
   INTERNAL_SERVER_ERROR,
   NOT_FOUND,
-  UNSUPPORTED_MEDIA_TYPE
+  UNPROCESSABLE_ENTITY,
+  UNSUPPORTED_MEDIA_TYPE,
+  createError
 } from 'http-errors-enhanced'
 import t from 'tap'
-import { handleErrors, plugin as fastifyHttpErrorsEnhanced } from '../src/index.js'
+import { plugin as fastifyHttpErrorsEnhanced, handleErrors } from '../src/index.js'
 
 type Callback = () => void
 
@@ -470,6 +471,25 @@ t.test('Plugin', t => {
       t.same(JSON.parse(response.payload), {
         statusCode: BAD_REQUEST,
         error: 'Bad Request',
+        message: 'One or more validations failed trying to process your request.',
+        failedValidations: { params: { id: 'must be a valid number' } }
+      })
+    })
+
+    t.test('should use 422 if requested to', async t => {
+      const server = await buildServer({ use422ForValidationErrors: true })
+
+      const response = await server.inject({
+        method: 'POST',
+        url: '/validated/abc',
+        headers: { 'x-header': '123' },
+        payload: []
+      })
+
+      t.equal(response.statusCode, UNPROCESSABLE_ENTITY)
+      t.same(JSON.parse(response.payload), {
+        statusCode: UNPROCESSABLE_ENTITY,
+        error: 'Unprocessable Entity',
         message: 'One or more validations failed trying to process your request.',
         failedValidations: { params: { id: 'must be a valid number' } }
       })
