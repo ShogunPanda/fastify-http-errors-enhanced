@@ -1,19 +1,24 @@
 import Ajv from 'ajv'
-import * as fastify from 'fastify'
-import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
-import { InternalServerError, INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
 import {
-  Configuration,
+  type FastifyInstance,
+  type FastifyReply,
+  type FastifyRequest,
+  type ValidationResult as FastifyValidationResult,
+  type RouteOptions
+} from 'fastify'
+import { INTERNAL_SERVER_ERROR, InternalServerError } from 'http-errors-enhanced'
+import {
   kHttpErrorsEnhancedConfiguration,
   kHttpErrorsEnhancedResponseValidations,
-  RequestSection,
-  ResponseSchemas,
-  ValidationFormatter,
-  Validations
+  type Configuration,
+  type RequestSection,
+  type ResponseSchemas,
+  type ValidationFormatter,
+  type Validations
 } from './interfaces.js'
 import { get } from './utils.js'
 
-export interface ValidationResult extends fastify.ValidationResult {
+export interface ValidationResult extends FastifyValidationResult {
   dataPath: any
   instancePath: string
 }
@@ -31,7 +36,7 @@ export function niceJoin(array: string[], lastSeparator: string = ' and ', separ
   }
 }
 
-export const validationMessagesFormatters: { [key: string]: ValidationFormatter } = {
+export const validationMessagesFormatters: Record<string, ValidationFormatter> = {
   contentType: () =>
     'only JSON payloads are accepted. Please set the "Content-Type" header to start with "application/json"',
   json: () => 'the body payload is not a valid JSON',
@@ -91,10 +96,10 @@ export const validationMessagesFormatters: { [key: string]: ValidationFormatter 
 
 export function convertValidationErrors(
   section: RequestSection,
-  data: { [key: string]: unknown },
+  data: Record<string, unknown>,
   validationErrors: ValidationResult[]
 ): Validations {
-  const errors: { [key: string]: string } = {}
+  const errors: Record<string, string> = {}
 
   if (section === 'querystring') {
     section = 'query'
@@ -217,7 +222,7 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
   this[kHttpErrorsEnhancedResponseValidations].push([
     this,
     validators,
-    Object.entries(route.schema.response as { [key: string]: object })
+    Object.entries(route.schema.response as Record<string, object>)
   ])
 
   // Note that this hook is not called for non JSON payloads therefore validation is not possible in such cases
@@ -232,7 +237,8 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
 
     // Never validate error 500
     if (statusCode === INTERNAL_SERVER_ERROR) {
-      return done(null, payload)
+      done(null, payload)
+      return
     }
 
     // No validator, it means the HTTP status is not allowed
@@ -240,21 +246,24 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
 
     if (!validator) {
       if (request[kHttpErrorsEnhancedConfiguration]!.allowUndeclaredResponses) {
-        return done(null, payload)
+        done(null, payload)
+        return
       }
 
-      return done(new InternalServerError(validationMessagesFormatters.invalidResponseCode(statusCode)))
+      done(new InternalServerError(validationMessagesFormatters.invalidResponseCode(statusCode)))
+      return
     }
 
     // Now validate the payload
     const valid = validator(payload)
 
     if (!valid) {
-      return done(
+      done(
         new InternalServerError(validationMessagesFormatters.invalidResponse(statusCode), {
           failedValidations: convertValidationErrors('response', payload, validator.errors as ValidationResult[])
         })
       )
+      return
     }
 
     done(null, payload)
@@ -263,7 +272,7 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
 
 export function compileResponseValidationSchema(this: FastifyInstance, configuration: Configuration): void {
   // Fix CJS/ESM interoperability
-  // @ts-expect-error
+  // @ts-expect-error Fix types
   let AjvConstructor = Ajv as Ajv & { default?: Ajv }
 
   if (AjvConstructor.default) {
@@ -273,7 +282,7 @@ export function compileResponseValidationSchema(this: FastifyInstance, configura
   const hasCustomizer = typeof configuration.responseValidatorCustomizer === 'function'
 
   for (const [instance, validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
-    // @ts-expect-error
+    // @ts-expect-error Fix types
     const compiler = new AjvConstructor({
       // The fastify defaults, with the exception of removeAdditional and coerceTypes, which have been reversed
       removeAdditional: false,

@@ -1,7 +1,6 @@
-import { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
+import { type FastifyError, type FastifyReply, type FastifyRequest } from 'fastify'
 import {
   BadRequestError,
-  HttpError,
   INTERNAL_SERVER_ERROR,
   InternalServerError,
   NotFoundError,
@@ -9,11 +8,17 @@ import {
   UnsupportedMediaTypeError,
   addAdditionalProperties,
   messagesByCodes,
-  serializeError
+  serializeError,
+  type HttpError
 } from 'http-errors-enhanced'
-import { GenericObject, NodeError, RequestSection, kHttpErrorsEnhancedConfiguration } from './interfaces.js'
+import {
+  kHttpErrorsEnhancedConfiguration,
+  type GenericObject,
+  type NodeError,
+  type RequestSection
+} from './interfaces.js'
 import { upperFirst } from './utils.js'
-import { ValidationResult, convertValidationErrors, validationMessagesFormatters } from './validation.js'
+import { convertValidationErrors, validationMessagesFormatters, type ValidationResult } from './validation.js'
 
 export function handleNotFoundError(request: FastifyRequest, reply: FastifyReply): void {
   handleErrors(new NotFoundError('Not found.'), request, reply)
@@ -65,7 +70,12 @@ export function handleErrors(error: FastifyError | Error, request: FastifyReques
     error = new UnsupportedMediaTypeError(upperFirst(validationMessagesFormatters.contentType()))
   } else if (code === 'FST_ERR_CTP_EMPTY_JSON_BODY') {
     error = new BadRequestError(upperFirst(validationMessagesFormatters.jsonEmpty()))
-  } else if (code === 'MALFORMED_JSON' || error.message === 'Invalid JSON' || error.stack!.includes('at JSON.parse')) {
+  } else if (
+    code === 'MALFORMED_JSON' ||
+    error.name === 'SyntaxError' ||
+    error.message === 'Invalid JSON' ||
+    error.stack!.includes('at JSON.parse')
+  ) {
     error = new BadRequestError(upperFirst(validationMessagesFormatters.json()))
   }
 

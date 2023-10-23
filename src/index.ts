@@ -1,8 +1,8 @@
-import { FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify'
+import { type FastifyError, type FastifyInstance, type FastifyPluginOptions } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
 import { handleErrors, handleNotFoundError } from './handlers.js'
 import {
-  Configuration,
+  type Configuration,
   kHttpErrorsEnhancedConfiguration,
   kHttpErrorsEnhancedResponseValidations
 } from './interfaces.js'

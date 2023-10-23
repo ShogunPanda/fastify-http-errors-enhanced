@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-import fastify, { FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify'
+import fastify, { type FastifyError, type FastifyInstance, type FastifyPluginOptions } from 'fastify'
 import { INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
 import t from 'tap'
 import { plugin as fastifyHttpErrorsEnhanced } from '../src/index.js'

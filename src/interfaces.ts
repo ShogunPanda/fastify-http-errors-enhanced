@@ -1,5 +1,6 @@
-import Ajv, { ValidateFunction } from 'ajv'
-import { FastifyError } from 'fastify'
+import { type ValidateFunction } from 'ajv'
+import type Ajv from 'ajv'
+import { type FastifyError } from 'fastify'
 
 export const kHttpErrorsEnhancedConfiguration = Symbol('fastify-http-errors-enhanced-configuration')
 export const kHttpErrorsEnhancedResponseValidations = Symbol('fastify-http-errors-enhanced-response-validation')
@@ -23,22 +24,14 @@ declare module 'fastify' {
   }
 }
 
-export interface GenericObject {
-  [key: string]: any
-}
+export type GenericObject = Record<string, any>
 
 export type NodeError = NodeJS.ErrnoException
 
 export type RequestSection = 'params' | 'query' | 'querystring' | 'headers' | 'body' | 'response'
 
-export interface ResponseSchemas {
-  [key: string]: ValidateFunction
-}
+export type ResponseSchemas = Record<string, ValidateFunction>
 
-export interface Validations {
-  [key: string]: {
-    [key: string]: string
-  }
-}
+export type Validations = Record<string, Record<string, string>>
 
 export type ValidationFormatter = (...args: any[]) => string

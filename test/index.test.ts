@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-import fastify, { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify'
+import fastify, {
+  type FastifyInstance,
+  type FastifyPluginOptions,
+  type FastifyReply,
+  type FastifyRequest
+} from 'fastify'
 import {
   BAD_GATEWAY,
   BAD_REQUEST,
@@ -560,7 +565,8 @@ t.test('Plugin', t => {
 
       t.same(payload, {
         error: 'Internal Server Error',
-        message: '[Error] params/id must be number',
+        message: '[FST_ERR_VALIDATION] params/id must be number',
+        code: 'FST_ERR_VALIDATION',
         statusCode: INTERNAL_SERVER_ERROR,
         validation: [
           {
@@ -631,7 +637,8 @@ t.test('Plugin', t => {
 
       t.same(payload, {
         error: 'Internal Server Error',
-        message: '[Error] params/id must be number',
+        message: '[FST_ERR_VALIDATION] params/id must be number',
+        code: 'FST_ERR_VALIDATION',
         statusCode: INTERNAL_SERVER_ERROR,
         validation: [
           {

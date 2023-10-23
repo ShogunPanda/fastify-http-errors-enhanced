@@ -2,11 +2,16 @@
 
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
-import fastify, { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify'
+import fastify, {
+  type FastifyInstance,
+  type FastifyPluginOptions,
+  type FastifyReply,
+  type FastifyRequest
+} from 'fastify'
 import { ACCEPTED, INTERNAL_SERVER_ERROR, OK } from 'http-errors-enhanced'
 import t from 'tap'
 import { convertValidationErrors, niceJoin, plugin as fastifyErrorProperties } from '../src/index.js'
-import { ValidationResult } from '../src/validation.js'
+import { type ValidationResult } from '../src/validation.js'
 
 async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
   const server = fastify()
