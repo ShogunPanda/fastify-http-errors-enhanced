@@ -1,3 +1,7 @@
+### 2023-10-23 / 4.3.0
+
+- chore: Updated dependencies and toolchain.
+
 ### 2023-10-06 / 4.2.0
 
 - feat: Added use422ForValidationErrors.
