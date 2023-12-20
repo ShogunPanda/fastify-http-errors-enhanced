@@ -83,10 +83,7 @@ export const validationMessagesFormatters: Record<string, ValidationFormatter> =
     return max === 0 ? 'must be a empty array' : `must be an array with at most ${max} items`
   },
   enum: values =>
-    `must be one of the following values: ${niceJoin(
-      values.map((f: string) => `"${f}"`),
-      ' or '
-    )}`,
+    `must be one of the following values: ${niceJoin(values.map((f: string) => `"${f}"`) as string[], ' or ')}`,
   pattern: pattern => `must match pattern "${pattern.replaceAll('(?:', '(')}"`,
   invalidResponseCode: code => `This endpoint cannot respond with HTTP status ${code}.`,
   invalidResponse: code =>
@@ -113,7 +110,7 @@ export function convertValidationErrors(
     let reason: string
 
     // Normalize the key
-    let key = e.dataPath ?? e.instancePath /* c8 ignore next */ ?? ''
+    let key: string = e.dataPath ?? e.instancePath /* c8 ignore next */ ?? ''
 
     if (/^[./]/.test(key)) {
       key = key.slice(1)
@@ -260,7 +257,11 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
     if (!valid) {
       done(
         new InternalServerError(validationMessagesFormatters.invalidResponse(statusCode), {
-          failedValidations: convertValidationErrors('response', payload, validator.errors as ValidationResult[])
+          failedValidations: convertValidationErrors(
+            'response',
+            payload as Record<string, unknown>,
+            validator.errors as ValidationResult[]
+          )
         })
       )
       return
@@ -283,7 +284,7 @@ export function compileResponseValidationSchema(this: FastifyInstance, configura
 
   for (const [instance, validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
     // @ts-expect-error Fix types
-    const compiler = new AjvConstructor({
+    const compiler: Ajv = new AjvConstructor({
       // The fastify defaults, with the exception of removeAdditional and coerceTypes, which have been reversed
       removeAdditional: false,
       useDefaults: true,

@@ -39,7 +39,7 @@ export function handleValidationError(error: FastifyError, request: FastifyReque
   return new Klass('One or more validations failed trying to process your request.', {
     failedValidations: convertValidationErrors(
       section,
-      Reflect.get(request, section),
+      Reflect.get(request, section) as Record<string, unknown>,
       error.validation! as ValidationResult[]
     )
   })
