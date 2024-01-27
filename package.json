@@ -29,8 +29,8 @@
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "dev": "swc --delete-dir-on-start -s -w -d dist src",
-    "build": "swc --delete-dir-on-start -d dist src",
+    "dev": "swc --strip-leading-paths --delete-dir-on-start -s -w -d dist src",
+    "build": "swc --strip-leading-paths --delete-dir-on-start -d dist src",
     "postbuild": "concurrently npm:lint npm:typecheck",
     "format": "prettier -w src test",
     "lint": "eslint --cache --ext .js,.jsx,.ts,.tsx src test",
@@ -44,13 +44,13 @@
   "dependencies": {
     "ajv": "^8.12.0",
     "fastify-plugin": "^4.5.1",
-    "http-errors-enhanced": "^2.0.3"
+    "http-errors-enhanced": "^2.0.6"
   },
   "devDependencies": {
     "@cowtech/eslint-config": "^9.0.3",
-    "@swc/cli": "^0.2.3",
-    "@swc/core": "^1.3.105",
-    "@types/node": "^20.11.6",
+    "@swc/cli": "^0.3.2",
+    "@swc/core": "^1.3.106",
+    "@types/node": "^20.11.7",
     "@types/tap": "^15.0.11",
     "ajv-formats": "^2.1.1",
     "c8": "^9.1.0",
@@ -58,7 +58,7 @@
     "concurrently": "^8.2.2",
     "fastify": "^4.25.2",
     "prettier": "^3.2.4",
-    "tap": "^18.6.1",
+    "tap": "^18.7.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
