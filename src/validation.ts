@@ -296,6 +296,7 @@ export function compileResponseValidationSchema(this: FastifyInstance, configura
     compiler.addKeyword('example')
 
     if (hasCustomizer) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       configuration.responseValidatorCustomizer!(compiler)
     }
 
