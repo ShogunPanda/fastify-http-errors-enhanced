@@ -2,7 +2,8 @@
 
 import fastify, { type FastifyError, type FastifyInstance, type FastifyPluginOptions } from 'fastify'
 import { INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
-import t from 'tap'
+import { deepStrictEqual, match } from 'node:assert'
+import { test } from 'node:test'
 import { plugin as fastifyHttpErrorsEnhanced } from '../src/index.js'
 
 async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
@@ -31,7 +32,7 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
   return server
 }
 
-t.test('should correctly allow preprocessing of error before executing the handler', async t => {
+test('should correctly allow preprocessing of error before executing the handler', async t => {
   const server = await buildServer({
     preHandler(error: FastifyError | Error) {
       Object.defineProperty(error, 'preHandlerExecuted', { enumerable: true, value: true })
@@ -41,14 +42,14 @@ t.test('should correctly allow preprocessing of error before executing the handl
 
   const response = await server.inject({ method: 'GET', url: '/error' })
 
-  t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-  t.equal(response.headers['x-custom-header'], 'Custom-Value')
+  deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+  deepStrictEqual(response.headers['x-custom-header'], 'Custom-Value')
 
   const payload = JSON.parse(response.payload)
-  t.match(payload.stack[0], /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/hooks\.test\.ts:\d+:\d+\)$/)
+  match(payload.stack[0] as string, /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/hooks\.test\.ts:\d+:\d+\)$/)
   delete payload.stack
 
-  t.same(payload, {
+  deepStrictEqual(payload, {
     error: 'Internal Server Error',
     message: '[Error] This was a generic message.',
     statusCode: INTERNAL_SERVER_ERROR,

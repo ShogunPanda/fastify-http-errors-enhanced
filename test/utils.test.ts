@@ -1,35 +1,30 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-import t from 'tap'
+import { deepStrictEqual, ifError } from 'node:assert'
+import { test } from 'node:test'
 import { get, upperFirst } from '../src/utils.js'
 
-t.test('Utils', t => {
-  t.test('.upperFirst should correctly convert strings', t => {
-    t.equal(upperFirst('abc'), 'Abc')
-    t.equal(upperFirst('aBC'), 'ABC')
-    t.equal(upperFirst(''), '')
-    t.equal(upperFirst(3), 3)
-
-    t.end()
+test('Utils', async () => {
+  await test('.upperFirst should correctly convert strings', () => {
+    deepStrictEqual(upperFirst('abc'), 'Abc')
+    deepStrictEqual(upperFirst('aBC'), 'ABC')
+    deepStrictEqual(upperFirst(''), '')
+    deepStrictEqual(upperFirst(3), 3)
   })
 
-  t.test('.get should correctly return paths', t => {
+  await test('.get should correctly return paths', () => {
     const target = {
       a: [{ b: { c: 1 } }],
       b: null
     }
 
-    t.same(get(target, 'a'), [{ b: { c: 1 } }])
-    t.type(get(target, 'b.c'), 'undefined')
-    t.same(get(target, 'a.0.b'), { c: 1 })
-    t.equal(get(target, 'a.0.b.c'), 1)
-    t.same(get(target, 'a.[0].b'), { c: 1 })
-    t.type(get(target, 'a.[2].b'), 'undefined')
-    t.type(get(target, 'a.[2]a.b'), 'undefined')
-    t.type(get(target, 'a.0.c.e.f'), 'undefined')
-
-    t.end()
+    deepStrictEqual(get(target, 'a'), [{ b: { c: 1 } }])
+    ifError(get(target, 'b.c'))
+    deepStrictEqual(get(target, 'a.0.b'), { c: 1 })
+    deepStrictEqual(get(target, 'a.0.b.c'), 1)
+    deepStrictEqual(get(target, 'a.[0].b'), { c: 1 })
+    ifError(get(target, 'a.[2].b'))
+    ifError(get(target, 'a.[2]a.b'))
+    ifError(get(target, 'a.0.c.e.f'))
   })
-
-  t.end()
 })

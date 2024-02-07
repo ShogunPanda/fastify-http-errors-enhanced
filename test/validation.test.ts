@@ -9,8 +9,9 @@ import fastify, {
   type FastifyRequest
 } from 'fastify'
 import { ACCEPTED, INTERNAL_SERVER_ERROR, OK } from 'http-errors-enhanced'
-import t from 'tap'
-import { convertValidationErrors, niceJoin, plugin as fastifyErrorProperties } from '../src/index.js'
+import { deepStrictEqual, match, ok } from 'node:assert'
+import { test } from 'node:test'
+import { convertValidationErrors, plugin as fastifyErrorProperties, niceJoin } from '../src/index.js'
 import { type ValidationResult } from '../src/validation.js'
 
 async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
@@ -135,16 +136,15 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
   return server
 }
 
-t.test('Validation', t => {
-  t.test('niceJoin utility method', t => {
-    t.equal(niceJoin([]), '')
-    t.equal(niceJoin(['a']), 'a')
-    t.equal(niceJoin(['b', 'c'], '@'), 'b@c')
-    t.equal(niceJoin(['b', 'c', 'd']), 'b, c and d')
-    t.end()
+test('Validation', async () => {
+  await test('niceJoin utility method', t => {
+    deepStrictEqual(niceJoin([]), '')
+    deepStrictEqual(niceJoin(['a']), 'a')
+    deepStrictEqual(niceJoin(['b', 'c'], '@'), 'b@c')
+    deepStrictEqual(niceJoin(['b', 'c', 'd']), 'b, c and d')
   })
 
-  t.test('should correctly parse validation errors', t => {
+  await test('should correctly parse validation errors', t => {
     const ajv = new Ajv({
       removeAdditional: false,
       useDefaults: true,
@@ -380,44 +380,41 @@ t.test('Validation', t => {
 
     const validate = ajv.compile(schema)
 
-    t.notOk(validate(data))
-    t.same(convertValidationErrors('body', data, validate.errors as ValidationResult[]), expected)
-    t.end()
+    ok(!validate(data))
+    deepStrictEqual(convertValidationErrors('body', data, validate.errors as ValidationResult[]), expected)
   })
-
-  t.end()
 })
 
-t.test('Response Validation', t => {
-  t.test('should allow valid endpoints', async t => {
+test('Response Validation', async () => {
+  await test('should allow valid endpoints', async t => {
     const server = await buildServer()
 
     const response = await server.inject({ method: 'GET', url: '/correct' })
 
-    t.equal(response.statusCode, OK)
-    t.same(JSON.parse(response.payload), { a: '1' })
+    deepStrictEqual(response.statusCode, OK)
+    deepStrictEqual(JSON.parse(response.payload), { a: '1' })
   })
 
-  t.test('should validate the response code', async t => {
+  await test('should validate the response code', async t => {
     const server = await buildServer()
 
     const response = await server.inject({ method: 'GET', url: '/bad-code' })
 
-    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-    t.same(JSON.parse(response.payload), {
+    deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+    deepStrictEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
       statusCode: INTERNAL_SERVER_ERROR
     })
   })
 
-  t.test('should validate the response body', async t => {
+  await test('should validate the response body', async t => {
     const server = await buildServer()
 
     const response = await server.inject({ method: 'GET', url: '/bad-body' })
 
-    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-    t.same(JSON.parse(response.payload), {
+    deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+    deepStrictEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'The response returned from the endpoint violates its specification for the HTTP status 200.',
       statusCode: INTERNAL_SERVER_ERROR,
@@ -431,7 +428,7 @@ t.test('Response Validation', t => {
     })
   })
 
-  t.test('should support shared schema', async t => {
+  await test('should support shared schema', async t => {
     const sharedServer = fastify()
 
     await sharedServer.register(fastifyErrorProperties, { convertResponsesValidationErrors: true })
@@ -460,65 +457,65 @@ t.test('Response Validation', t => {
 
     const response = await sharedServer.inject({ method: 'GET', url: '/bad-code' })
 
-    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-    t.same(JSON.parse(response.payload), {
+    deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+    deepStrictEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
       statusCode: INTERNAL_SERVER_ERROR
     })
   })
 
-  t.test('should allow everything no response schema is defined', async t => {
+  await test('should allow everything no response schema is defined', async t => {
     const server = await buildServer()
 
     const response = await server.inject({ method: 'GET', url: '/no-schema' })
 
-    t.equal(response.statusCode, OK)
-    t.same(JSON.parse(response.payload), { a: 1, c: 2 })
+    deepStrictEqual(response.statusCode, OK)
+    deepStrictEqual(JSON.parse(response.payload), { a: 1, c: 2 })
   })
 
-  t.test('should allow responses which are missing in the schema if explicitily enabled', async t => {
+  await test('should allow responses which are missing in the schema if explicitily enabled', async t => {
     const server = await buildServer({ allowUndeclaredResponses: true })
 
     const response = await server.inject({ method: 'GET', url: '/undeclared-response' })
 
-    t.equal(response.statusCode, ACCEPTED)
-    t.same(JSON.parse(response.payload), { a: 1 })
+    deepStrictEqual(response.statusCode, ACCEPTED)
+    deepStrictEqual(JSON.parse(response.payload), { a: 1 })
   })
 
-  t.test('should allow everything if the payload is not JSON', async t => {
+  await test('should allow everything if the payload is not JSON', async t => {
     const server = await buildServer()
 
     const response = await server.inject({ method: 'GET', url: '/no-json' })
 
-    t.equal(response.statusCode, ACCEPTED)
-    t.match(response.headers['content-type'], /^text\/plain/)
-    t.equal(response.payload, 'ACCEPTED')
+    deepStrictEqual(response.statusCode, ACCEPTED)
+    match(response.headers['content-type'] as string, /^text\/plain/)
+    deepStrictEqual(response.payload, 'ACCEPTED')
   })
 
-  t.test('should allow everything if explicitily disabled', async t => {
+  await test('should allow everything if explicitily disabled', async t => {
     const server = await buildServer({ convertResponsesValidationErrors: false })
 
     const response = await server.inject({ method: 'GET', url: '/bad-code' })
 
-    t.equal(response.statusCode, ACCEPTED)
-    t.same(JSON.parse(response.payload), { a: 1 })
+    deepStrictEqual(response.statusCode, ACCEPTED)
+    deepStrictEqual(JSON.parse(response.payload), { a: 1 })
   })
 
-  t.test('should allow everything if explicitily enabled', async t => {
+  await test('should allow everything if explicitily enabled', async t => {
     const server = await buildServer({ convertResponsesValidationErrors: true })
 
     const response = await server.inject({ method: 'GET', url: '/bad-code' })
 
-    t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-    t.same(JSON.parse(response.payload), {
+    deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+    deepStrictEqual(JSON.parse(response.payload), {
       error: 'Internal Server Error',
       message: 'This endpoint cannot respond with HTTP status 202.',
       statusCode: INTERNAL_SERVER_ERROR
     })
   })
 
-  t.test('should support the customization of the response validator', async t => {
+  await test('should support the customization of the response validator', async t => {
     const server = fastify()
 
     let compiler: Ajv | undefined
@@ -552,8 +549,6 @@ t.test('Response Validation', t => {
 
     await server.inject({ method: 'GET', url: '/bad-code' })
 
-    t.type(compiler, Ajv)
+    ok(compiler instanceof Ajv)
   })
-
-  t.end()
 })

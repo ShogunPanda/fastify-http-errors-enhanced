@@ -16,7 +16,8 @@ import {
   UNSUPPORTED_MEDIA_TYPE,
   createError
 } from 'http-errors-enhanced'
-import t from 'tap'
+import { deepStrictEqual, match } from 'node:assert'
+import { test } from 'node:test'
 import { plugin as fastifyHttpErrorsEnhanced, handleErrors } from '../src/index.js'
 
 type Callback = () => void
@@ -200,42 +201,42 @@ function buildStandaloneServer(): FastifyInstance {
   return standaloneServer
 }
 
-t.test('Plugin', t => {
-  t.test('Handling http-errors', t => {
-    t.test('should correctly return client errors', async t => {
+test('Plugin', async () => {
+  await test('Handling http-errors', async () => {
+    await test('should correctly return client errors', async () => {
       const server = await buildServer()
 
       const response = await server.inject({ method: 'GET', url: '/not-found' })
 
-      t.equal(response.statusCode, NOT_FOUND)
-      t.match(response.headers['content-type'], /^application\/json/)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, NOT_FOUND)
+      match(response.headers['content-type'] as string, /^application\/json/)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Not Found',
         message: 'Not found.',
         statusCode: NOT_FOUND
       })
     })
 
-    t.test('should correctly return server errors', async t => {
+    await test('should correctly return server errors', async () => {
       const server = await buildServer()
 
       const response = await server.inject({ method: 'GET', url: '/bad-gateway' })
 
-      t.equal(response.statusCode, BAD_GATEWAY)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, BAD_GATEWAY)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Bad Gateway',
         message: 'This was the error message.',
         statusCode: BAD_GATEWAY
       })
     })
 
-    t.test('should correctly return error codes when not starting with the prefix', async t => {
+    await test('should correctly return error codes when not starting with the prefix', async () => {
       const server = await buildServer()
 
       const response = await server.inject({ method: 'GET', url: '/error-with-code' })
 
-      t.equal(response.statusCode, BAD_GATEWAY)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, BAD_GATEWAY)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Bad Gateway',
         message: 'This was the error message.',
         statusCode: BAD_GATEWAY,
@@ -243,40 +244,40 @@ t.test('Plugin', t => {
       })
     })
 
-    t.test('should correctly return server duck-typed errors', async t => {
+    await test('should correctly return server duck-typed errors', async () => {
       const server = await buildServer()
 
       const response = await server.inject({ method: 'GET', url: '/duck-error' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Internal Server Error',
         message: 'This was a generic duck message.',
         statusCode: INTERNAL_SERVER_ERROR
       })
     })
 
-    t.test('should correctly return additional headers', async t => {
+    await test('should correctly return additional headers', async () => {
       const server = await buildServer()
 
       const response = await server.inject({ method: 'GET', url: '/headers' })
 
-      t.equal(response.statusCode, NOT_FOUND)
-      t.equal(response.headers['x-custom-header'], 'Custom-Value')
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, NOT_FOUND)
+      deepStrictEqual(response.headers['x-custom-header'], 'Custom-Value')
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Not Found',
         message: 'This was the error message.',
         statusCode: NOT_FOUND
       })
     })
 
-    t.test('should correctly return additional properties', async t => {
+    await test('should correctly return additional properties', async () => {
       const server = await buildServer()
 
       const response = await server.inject({ method: 'GET', url: '/properties' })
 
-      t.equal(response.statusCode, BAD_GATEWAY)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, BAD_GATEWAY)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Bad Gateway',
         message: 'This was the error message.',
         statusCode: BAD_GATEWAY,
@@ -284,61 +285,56 @@ t.test('Plugin', t => {
       })
     })
 
-    t.test('should default status code to 500 if outside HTTP range', async t => {
+    await test('should default status code to 500 if outside HTTP range', async () => {
       const server = await buildServer()
 
       const response = await server.inject({ method: 'GET', url: '/weird-code' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Internal Server Error',
         message: 'This was the error message.',
         statusCode: INTERNAL_SERVER_ERROR
       })
     })
 
-    t.test('should have good defaults if the error is weirdly manipulated', async t => {
+    await test('should have good defaults if the error is weirdly manipulated', async () => {
       const server = await buildServer({ hideUnhandledErrors: false })
 
       const response = await server.inject({ method: 'GET', url: '/weird-error' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Internal Server Error',
         message: '[Error] This was the error message.',
         statusCode: INTERNAL_SERVER_ERROR,
         stack: []
       })
     })
-
-    t.end()
   })
 
-  t.test('Handling generic errors', t => {
-    t.test(
-      'should correctly return generic errors by wrapping them in a 500 http-error, including headers and properties',
-      async t => {
-        const server = await buildServer()
+  await test('Handling generic errors', async () => {
+    await test('should correctly return generic errors by wrapping them in a 500 http-error, including headers and properties', async () => {
+      const server = await buildServer()
 
-        const response = await server.inject({ method: 'GET', url: '/error' })
+      const response = await server.inject({ method: 'GET', url: '/error' })
 
-        t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-        t.equal(response.headers['x-custom-header'], 'Custom-Value')
+      deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+      deepStrictEqual(response.headers['x-custom-header'], 'Custom-Value')
 
-        const payload = JSON.parse(response.payload)
-        t.match(payload.stack[0], /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
-        delete payload.stack
+      const payload = JSON.parse(response.payload)
+      match(payload.stack[0] as string, /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
+      delete payload.stack
 
-        t.same(payload, {
-          error: 'Internal Server Error',
-          message: '[Error] This was a generic message.',
-          statusCode: INTERNAL_SERVER_ERROR,
-          id: 1
-        })
-      }
-    )
+      deepStrictEqual(payload, {
+        error: 'Internal Server Error',
+        message: '[Error] This was a generic message.',
+        statusCode: INTERNAL_SERVER_ERROR,
+        id: 1
+      })
+    })
 
-    t.test('should correctly install a not found error handler', async t => {
+    await test('should correctly install a not found error handler', async () => {
       const server = await buildServer()
 
       const response = await server.inject({
@@ -347,15 +343,15 @@ t.test('Plugin', t => {
         headers: { 'content-type': 'image/png' }
       })
 
-      t.equal(response.statusCode, NOT_FOUND)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, NOT_FOUND)
+      deepStrictEqual(JSON.parse(response.payload), {
         statusCode: 404,
         error: 'Not Found',
         message: 'Not found.'
       })
     })
 
-    t.test('should correctly skip installing a not found error handler', async t => {
+    await test('should correctly skip installing a not found error handler', async () => {
       const server = await buildServer({ handle404Errors: false })
 
       server.setNotFoundHandler((_: FastifyRequest, reply: FastifyReply) => {
@@ -368,11 +364,11 @@ t.test('Plugin', t => {
         headers: { 'content-type': 'image/png' }
       })
 
-      t.equal(response.statusCode, 444)
-      t.same(response.payload, 'NOT FOUND')
+      deepStrictEqual(response.statusCode, 444)
+      deepStrictEqual(response.payload, 'NOT FOUND')
     })
 
-    t.test('should correctly parse invalid content type errors', async t => {
+    await test('should correctly parse invalid content type errors', async () => {
       const server = await buildServer()
 
       const response = await server.inject({
@@ -381,8 +377,8 @@ t.test('Plugin', t => {
         headers: { 'content-type': 'image/png' }
       })
 
-      t.equal(response.statusCode, UNSUPPORTED_MEDIA_TYPE)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, UNSUPPORTED_MEDIA_TYPE)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Unsupported Media Type',
         message:
           'Only JSON payloads are accepted. Please set the "Content-Type" header to start with "application/json"',
@@ -390,7 +386,7 @@ t.test('Plugin', t => {
       })
     })
 
-    t.test('should correctly parse missing body errors', async t => {
+    await test('should correctly parse missing body errors', async () => {
       const server = await buildServer()
 
       const response = await server.inject({
@@ -399,15 +395,15 @@ t.test('Plugin', t => {
         headers: { 'content-type': 'application/json' }
       })
 
-      t.equal(response.statusCode, BAD_REQUEST)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, BAD_REQUEST)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Bad Request',
         message: 'The JSON body payload cannot be empty if the "Content-Type" header is set',
         statusCode: BAD_REQUEST
       })
     })
 
-    t.test('should correctly parse malformed body errors', async t => {
+    await test('should correctly parse malformed body errors', async () => {
       const server = await buildServer()
 
       const response = await server.inject({
@@ -417,52 +413,50 @@ t.test('Plugin', t => {
         payload: '{a'
       })
 
-      t.equal(response.statusCode, BAD_REQUEST)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, BAD_REQUEST)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Bad Request',
         message: 'The body payload is not a valid JSON',
         statusCode: BAD_REQUEST
       })
     })
 
-    t.test('should correctly return server errors with masking explicitily enabled', async t => {
+    await test('should correctly return server errors with masking explicitily enabled', async () => {
       const server = await buildServer({ hideUnhandledErrors: true })
 
       const response = await server.inject({ method: 'GET', url: '/error' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+      deepStrictEqual(JSON.parse(response.payload), {
         error: 'Internal Server Error',
         message: 'An error occurred trying to process your request.',
         statusCode: INTERNAL_SERVER_ERROR
       })
     })
 
-    t.test('should correctly return server errors with masking explicitily disabled', async t => {
+    await test('should correctly return server errors with masking explicitily disabled', async () => {
       const server = await buildServer()
 
       const response = await server.inject({ method: 'GET', url: '/error' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
-      t.equal(response.headers['x-custom-header'], 'Custom-Value')
+      deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
+      deepStrictEqual(response.headers['x-custom-header'], 'Custom-Value')
 
       const payload = JSON.parse(response.payload)
-      t.match(payload.stack[0], /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
+      match(payload.stack[0] as string, /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
       delete payload.stack
 
-      t.same(payload, {
+      deepStrictEqual(payload, {
         error: 'Internal Server Error',
         message: '[Error] This was a generic message.',
         statusCode: INTERNAL_SERVER_ERROR,
         id: 1
       })
     })
-
-    t.end()
   })
 
-  t.test('Handling validation errors', t => {
-    t.test('should validate params', async t => {
+  await test('Handling validation errors', async () => {
+    await test('should validate params', async () => {
       const server = await buildServer()
 
       const response = await server.inject({
@@ -472,8 +466,8 @@ t.test('Plugin', t => {
         payload: []
       })
 
-      t.equal(response.statusCode, BAD_REQUEST)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, BAD_REQUEST)
+      deepStrictEqual(JSON.parse(response.payload), {
         statusCode: BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
@@ -481,7 +475,7 @@ t.test('Plugin', t => {
       })
     })
 
-    t.test('should use 422 if requested to', async t => {
+    await test('should use 422 if requested to', async () => {
       const server = await buildServer({ use422ForValidationErrors: true })
 
       const response = await server.inject({
@@ -491,8 +485,8 @@ t.test('Plugin', t => {
         payload: []
       })
 
-      t.equal(response.statusCode, UNPROCESSABLE_ENTITY)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, UNPROCESSABLE_ENTITY)
+      deepStrictEqual(JSON.parse(response.payload), {
         statusCode: UNPROCESSABLE_ENTITY,
         error: 'Unprocessable Entity',
         message: 'One or more validations failed trying to process your request.',
@@ -500,7 +494,7 @@ t.test('Plugin', t => {
       })
     })
 
-    t.test('should validate querystring', async t => {
+    await test('should validate querystring', async () => {
       const server = await buildServer()
 
       const response = await server.inject({
@@ -510,8 +504,8 @@ t.test('Plugin', t => {
         payload: []
       })
 
-      t.equal(response.statusCode, BAD_REQUEST)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, BAD_REQUEST)
+      deepStrictEqual(JSON.parse(response.payload), {
         statusCode: BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
@@ -519,13 +513,13 @@ t.test('Plugin', t => {
       })
     })
 
-    t.test('should validate headers', async t => {
+    await test('should validate headers', async () => {
       const server = await buildServer()
 
       const response = await server.inject({ method: 'POST', url: '/validated/123', payload: [] })
 
-      t.equal(response.statusCode, BAD_REQUEST)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, BAD_REQUEST)
+      deepStrictEqual(JSON.parse(response.payload), {
         statusCode: BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
@@ -533,13 +527,13 @@ t.test('Plugin', t => {
       })
     })
 
-    t.test('should validate body', async t => {
+    await test('should validate body', async () => {
       const server = await buildServer()
 
       const response = await server.inject({ method: 'POST', url: '/validated/123' })
 
-      t.equal(response.statusCode, BAD_REQUEST)
-      t.same(JSON.parse(response.payload), {
+      deepStrictEqual(response.statusCode, BAD_REQUEST)
+      deepStrictEqual(JSON.parse(response.payload), {
         statusCode: BAD_REQUEST,
         error: 'Bad Request',
         message: 'One or more validations failed trying to process your request.',
@@ -547,7 +541,7 @@ t.test('Plugin', t => {
       })
     })
 
-    t.test('should not convert validation if option is disabled', async t => {
+    await test('should not convert validation if option is disabled', async () => {
       const server = await buildServer({ convertValidationErrors: false })
 
       const response = await server.inject({
@@ -557,13 +551,13 @@ t.test('Plugin', t => {
         payload: []
       })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+      deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
 
       const payload = JSON.parse(response.payload)
-      t.match(payload.stack[1], /wrapValidationError \(\$ROOT\/node_modules.*\/fastify.*\/.+:\d+:\d+\)/)
+      match(payload.stack[1] as string, /wrapValidationError \(\$ROOT\/node_modules.*\/fastify.*\/.+:\d+:\d+\)/)
       delete payload.stack
 
-      t.same(payload, {
+      deepStrictEqual(payload, {
         error: 'Internal Server Error',
         message: '[FST_ERR_VALIDATION] params/id must be number',
         code: 'FST_ERR_VALIDATION',
@@ -582,41 +576,39 @@ t.test('Plugin', t => {
         validationContext: 'params'
       })
     })
-
-    t.end()
   })
 
-  t.test('Using standalone error handling', t => {
-    t.test("should not return the error's properties by masking server side errors", async t => {
+  await test('Using standalone error handling', async () => {
+    await test("should not return the error's properties by masking server side errors", async () => {
       const server = buildStandaloneServer()
 
       const response = await server.inject({ method: 'GET', url: '/error/123' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+      deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
 
       const payload = JSON.parse(response.payload)
-      t.match(payload.stack[0], /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
+      match(payload.stack[0] as string, /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
       delete payload.stack
 
-      t.same(payload, {
+      deepStrictEqual(payload, {
         error: 'Internal Server Error',
         message: '[Error] This was a generic message.',
         statusCode: INTERNAL_SERVER_ERROR
       })
     })
 
-    t.test('should return error codes', async t => {
+    await test('should return error codes', async () => {
       const server = buildStandaloneServer()
 
       const response = await server.inject({ method: 'GET', url: '/error/code' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+      deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
 
       const payload = JSON.parse(response.payload)
-      t.match(payload.stack[0], /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
+      match(payload.stack[0] as string, /^Object\.handler \((?:file:\/\/)?\$ROOT\/test\/index\.test\.ts:\d+:\d+\)$/)
       delete payload.stack
 
-      t.same(payload, {
+      deepStrictEqual(payload, {
         error: 'Internal Server Error',
         message: '[CODE] This was a generic message.',
         statusCode: INTERNAL_SERVER_ERROR,
@@ -624,18 +616,18 @@ t.test('Plugin', t => {
       })
     })
 
-    t.test('should not convert validation errors', async t => {
+    await test('should not convert validation errors', async () => {
       const server = buildStandaloneServer()
 
       const response = await server.inject({ method: 'GET', url: '/error/abc' })
 
-      t.equal(response.statusCode, INTERNAL_SERVER_ERROR)
+      deepStrictEqual(response.statusCode, INTERNAL_SERVER_ERROR)
 
       const payload = JSON.parse(response.payload)
-      t.match(payload.stack[1], /wrapValidationError \(\$ROOT\/node_modules.*\/fastify.*\/.+:\d+:\d+\)/)
+      match(payload.stack[1] as string, /wrapValidationError \(\$ROOT\/node_modules.*\/fastify.*\/.+:\d+:\d+\)/)
       delete payload.stack
 
-      t.same(payload, {
+      deepStrictEqual(payload, {
         error: 'Internal Server Error',
         message: '[FST_ERR_VALIDATION] params/id must be number',
         code: 'FST_ERR_VALIDATION',
@@ -654,9 +646,5 @@ t.test('Plugin', t => {
         validationContext: 'params'
       })
     })
-
-    t.end()
   })
-
-  t.end()
 })
