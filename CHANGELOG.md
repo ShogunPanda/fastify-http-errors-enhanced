@@ -1,3 +1,9 @@
+### 2024-10-21 / 6.0.0
+
+- feat!: Dropped support for Node 18 and updated dependencies.
+- fix: Replicate AJV options in response validator. Fixes #9.
+- fix: Remove leftover.
+
 ### 2024-04-12 / 5.0.4
 
 - chore: Updated dependencies.
