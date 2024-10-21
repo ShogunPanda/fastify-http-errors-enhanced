@@ -1,5 +1,7 @@
-import Ajv from 'ajv'
+import { Ajv, type Options } from 'ajv'
+import addFormats from 'ajv-formats'
 import {
+  FastifyServerOptions,
   type FastifyInstance,
   type FastifyReply,
   type FastifyRequest,
@@ -18,9 +20,54 @@ import {
 } from './interfaces.js'
 import { get } from './utils.js'
 
+// Fix CJS/ESM interoperability
+
 export interface ValidationResult extends FastifyValidationResult {
   dataPath: any
   instancePath: string
+}
+
+/* c8 ignore next 15 */
+/*
+  The fastify defaults, with the following modifications:
+    * coerceTypes is set to false
+    * removeAdditional is set to false
+    * allErrors is set to true
+    * uriResolver has been removed
+*/
+export const defaultAjvOptions: Options = {
+  coerceTypes: false,
+  useDefaults: true,
+  removeAdditional: false,
+  addUsedSchema: false,
+  allErrors: true
+}
+
+function buildAjv(options?: Options, plugins?: (Function | [Function, unknown])[]): Ajv {
+  // Create the instance
+  const compiler: Ajv = new Ajv({
+    ...defaultAjvOptions,
+    ...options
+  })
+
+  // Add plugins
+  let formatPluginAdded = false
+  for (const pluginSpec of plugins ?? []) {
+    const [plugin, pluginOpts]: [Function, unknown] = Array.isArray(pluginSpec) ? pluginSpec : [pluginSpec, undefined]
+
+    if (plugin.name === 'formatsPlugin') {
+      formatPluginAdded = true
+    }
+
+    plugin(compiler, pluginOpts)
+  }
+
+  if (!formatPluginAdded) {
+    // @ts-expect-error Wrong typing
+    addFormats(compiler)
+  }
+
+  return compiler
 }
 
 export function niceJoin(array: string[], lastSeparator: string = ' and ', separator: string = ', '): string {
@@ -89,6 +136,7 @@ export const validationMessagesFormatters: Record<string, ValidationFormatter> =
   invalidResponse: code =>
     `The response returned from the endpoint violates its specification for the HTTP status ${code}.`,
   invalidFormat: format => `must match format "${format}" (format)`
+  /* c8 ignore next */
 }
 
 export function convertValidationErrors(
@@ -96,6 +144,7 @@ export function convertValidationErrors(
   data: Record<string, unknown>,
   validationErrors: ValidationResult[]
 ): Validations {
+  /* c8 ignore next 2 */
   const errors: Record<string, string> = {}
 
   if (section === 'querystring') {
@@ -182,6 +231,7 @@ export function convertValidationErrors(
     }
 
     // No custom message was found, default to input one replacing the starting verb and adding some path info
+    /* c8 ignore next 3 */
     if (!message.length) {
       message = `${e.message?.replace(/^should/, 'must')} (${e.keyword})`
     }
@@ -272,31 +322,22 @@ export function addResponseValidation(this: FastifyInstance, route: RouteOptions
 }
 
 export function compileResponseValidationSchema(this: FastifyInstance, configuration: Configuration): void {
-  // Fix CJS/ESM interoperability
-  // @ts-expect-error Fix types
-  let AjvConstructor = Ajv as Ajv & { default?: Ajv }
-
-  if (AjvConstructor.default) {
-    AjvConstructor = AjvConstructor.default
-  }
-
+  /* c8 ignore next 3 */
   const hasCustomizer = typeof configuration.responseValidatorCustomizer === 'function'
 
+  // This is hackish, but it is the only way to get the options from fastify at the moment.
+  const kOptions = Object.getOwnPropertySymbols(this).find(s => s.description === 'fastify.options')!
+
   for (const [instance, validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
-    // @ts-expect-error Fix types
-    const compiler: Ajv = new AjvConstructor({
-      // The fastify defaults, with the exception of removeAdditional and coerceTypes, which have been reversed
-      removeAdditional: false,
-      useDefaults: true,
-      coerceTypes: false,
-      allErrors: true
-    })
+    // Create the compiler using exactly the same options as fastify
+    const ajvOptions = (instance[kOptions as keyof FastifyInstance] as FastifyServerOptions)?.ajv ?? {}
+    const compiler = buildAjv(ajvOptions.customOptions, ajvOptions.plugins)
 
+    // Add instance schemas
     compiler.addSchema(Object.values(instance.getSchemas()))
-    compiler.addKeyword('example')
 
+    // Customize if required to
     if (hasCustomizer) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       configuration.responseValidatorCustomizer!(compiler)
     }
 

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
-
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
 import fastify, {
@@ -15,7 +13,18 @@ import { convertValidationErrors, plugin as fastifyErrorProperties, niceJoin } f
 import { type ValidationResult } from '../src/validation.js'
 
 async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
-  const server = fastify()
+  const server = fastify({
+    ajv: {
+      plugins: [addFormats],
+      customOptions: {
+        formats: {
+          sequence(data: string): boolean {
+            return data === '123'
+          }
+        }
+      }
+    }
+  })
 
   await server.register(fastifyErrorProperties, options)
 
@@ -34,6 +43,29 @@ async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyI
     },
     handler(_: FastifyRequest, reply: FastifyReply) {
       reply.send({ a: '1' })
+    }
+  })
+
+  server.get('/formats', {
+    schema: {
+      response: {
+        [OK]: {
+          type: 'object',
+          properties: {
+            email: {
+              type: 'string',
+              format: 'email'
+            },
+            sequence: {
+              type: 'string',
+              format: 'sequence'
+            }
+          }
+        }
+      }
+    },
+    handler(_: FastifyRequest, reply: FastifyReply) {
+      reply.send({ email: 'test@example.com', sequence: '123' })
     }
   })
 
@@ -393,6 +425,15 @@ test('Response Validation', async () => {
 
     deepStrictEqual(response.statusCode, OK)
     deepStrictEqual(JSON.parse(response.payload), { a: '1' })
+  })
+
+  await test('should allow custom formats', async t => {
+    const server = await buildServer()
+
+    const response = await server.inject({ method: 'GET', url: '/formats' })
+
+    deepStrictEqual(response.statusCode, OK)
+    deepStrictEqual(JSON.parse(response.payload), { email: 'test@example.com', sequence: '123' })
   })
 
   await test('should validate the response code', async t => {
