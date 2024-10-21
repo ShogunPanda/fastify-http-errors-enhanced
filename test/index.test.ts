@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
-
 import fastify, {
   type FastifyInstance,
   type FastifyPluginOptions,

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
-
 import { deepStrictEqual, ifError } from 'node:assert'
 import { test } from 'node:test'
 import { get, upperFirst } from '../src/utils.js'

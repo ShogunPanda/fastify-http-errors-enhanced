@@ -97,7 +97,6 @@ export function handleErrors(error: FastifyError | Error, request: FastifyReques
   addAdditionalProperties(body, error)
 
   // Send the error back
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   reply
     .code(statusCode)
     .headers(headers ?? {})

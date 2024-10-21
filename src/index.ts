@@ -27,8 +27,8 @@ export const plugin = fastifyPlugin(
       preHandler: typeof options.preHandler === 'function' ? options.preHandler : undefined
     }
 
-    instance.decorate(kHttpErrorsEnhancedConfiguration, null)
-    instance.decorateRequest(kHttpErrorsEnhancedConfiguration, null)
+    instance.decorate(kHttpErrorsEnhancedConfiguration, undefined)
+    instance.decorateRequest(kHttpErrorsEnhancedConfiguration, undefined)
 
     instance.addHook('onRequest', (request, _, done) => {
       request[kHttpErrorsEnhancedConfiguration] = configuration
@@ -51,7 +51,7 @@ export const plugin = fastifyPlugin(
 
     done()
   },
-  { name: 'fastify-http-errors-enhanced', fastify: '4.x' }
+  { name: 'fastify-http-errors-enhanced', fastify: '5.x' }
 )
 
 export default plugin
