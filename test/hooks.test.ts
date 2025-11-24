@@ -2,7 +2,7 @@ import fastify, { type FastifyError, type FastifyInstance, type FastifyPluginOpt
 import { INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
 import { deepStrictEqual, match } from 'node:assert'
 import { test } from 'node:test'
-import { plugin as fastifyHttpErrorsEnhanced } from '../src/index.js'
+import { plugin as fastifyHttpErrorsEnhanced } from '../src/index.ts'
 
 async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
   const server = fastify({

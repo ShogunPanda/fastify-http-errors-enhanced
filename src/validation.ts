@@ -1,10 +1,10 @@
 import { Ajv, type Options } from 'ajv'
 import addFormats from 'ajv-formats'
 import {
-  FastifyServerOptions,
   type FastifyInstance,
   type FastifyReply,
   type FastifyRequest,
+  type FastifyServerOptions,
   type ValidationResult as FastifyValidationResult,
   type RouteOptions
 } from 'fastify'
@@ -17,8 +17,8 @@ import {
   type ResponseSchemas,
   type ValidationFormatter,
   type Validations
-} from './interfaces.js'
-import { get } from './utils.js'
+} from './interfaces.ts'
+import { get } from './utils.ts'
 
 // Fix CJS/ESM interoperability
 
@@ -52,7 +52,9 @@ function buildAjv(options?: Options, plugins?: (Function | [Function, unknown])[
 
   // Add plugins
   let formatPluginAdded = false
+  /* c8 ignore next - else */
   for (const pluginSpec of plugins ?? []) {
+    /* c8 ignore next - else */
     const [plugin, pluginOpts]: [Function, unknown] = Array.isArray(pluginSpec) ? pluginSpec : [pluginSpec, undefined]
 
     if (plugin.name === 'formatsPlugin') {
@@ -330,6 +332,7 @@ export function compileResponseValidationSchema(this: FastifyInstance, configura
 
   for (const [instance, validators, schemas] of this[kHttpErrorsEnhancedResponseValidations]) {
     // Create the compiler using exactly the same options as fastify
+    /* c8 ignore next - else */
     const ajvOptions = (instance[kOptions as keyof FastifyInstance] as FastifyServerOptions)?.ajv ?? {}
     const compiler = buildAjv(ajvOptions.customOptions, ajvOptions.plugins)
 

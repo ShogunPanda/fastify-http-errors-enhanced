@@ -9,8 +9,8 @@ import fastify, {
 import { ACCEPTED, INTERNAL_SERVER_ERROR, OK } from 'http-errors-enhanced'
 import { deepStrictEqual, match, ok } from 'node:assert'
 import { test } from 'node:test'
-import { convertValidationErrors, plugin as fastifyErrorProperties, niceJoin } from '../src/index.js'
-import { type ValidationResult } from '../src/validation.js'
+import { convertValidationErrors, plugin as fastifyErrorProperties, niceJoin } from '../src/index.ts'
+import { type ValidationResult } from '../src/validation.ts'
 
 async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
   const server = fastify({

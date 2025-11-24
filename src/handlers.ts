@@ -16,9 +16,9 @@ import {
   type GenericObject,
   type NodeError,
   type RequestSection
-} from './interfaces.js'
-import { upperFirst } from './utils.js'
-import { convertValidationErrors, validationMessagesFormatters, type ValidationResult } from './validation.js'
+} from './interfaces.ts'
+import { upperFirst } from './utils.ts'
+import { convertValidationErrors, validationMessagesFormatters, type ValidationResult } from './validation.ts'
 
 export function handleNotFoundError(request: FastifyRequest, reply: FastifyReply): void {
   handleErrors(new NotFoundError('Not found.'), request, reply)
@@ -72,6 +72,7 @@ export function handleErrors(error: FastifyError | Error, request: FastifyReques
     error = new BadRequestError(upperFirst(validationMessagesFormatters.jsonEmpty()))
   } else if (
     code === 'MALFORMED_JSON' ||
+    code === 'FST_ERR_CTP_INVALID_JSON_BODY' ||
     error.name === 'SyntaxError' ||
     error.message === 'Invalid JSON' ||
     error.stack!.includes('at JSON.parse')

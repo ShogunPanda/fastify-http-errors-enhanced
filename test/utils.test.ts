@@ -1,6 +1,6 @@
 import { deepStrictEqual, ifError } from 'node:assert'
 import { test } from 'node:test'
-import { get, upperFirst } from '../src/utils.js'
+import { get, upperFirst } from '../src/utils.ts'
 
 test('Utils', async () => {
   await test('.upperFirst should correctly convert strings', () => {

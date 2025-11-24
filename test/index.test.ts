@@ -16,7 +16,7 @@ import {
 } from 'http-errors-enhanced'
 import { deepStrictEqual, match } from 'node:assert'
 import { test } from 'node:test'
-import { plugin as fastifyHttpErrorsEnhanced, handleErrors } from '../src/index.js'
+import { plugin as fastifyHttpErrorsEnhanced, handleErrors } from '../src/index.ts'
 
 type Callback = () => void
 
