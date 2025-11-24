@@ -1,3 +1,7 @@
+### 2025-11-24 / 7.0.0
+
+- feat!: Drop compatibility with Node.js 20.
+
 ### 2024-12-28 / 6.0.1
 
 - chore: Updated dependencies.
