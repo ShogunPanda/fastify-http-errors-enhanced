@@ -1,3 +1,5 @@
+import { deepStrictEqual, match } from 'node:assert'
+import { test } from 'node:test'
 import fastify, {
   type FastifyInstance,
   type FastifyPluginOptions,
@@ -14,8 +16,6 @@ import {
   UNSUPPORTED_MEDIA_TYPE,
   createError
 } from 'http-errors-enhanced'
-import { deepStrictEqual, match } from 'node:assert'
-import { test } from 'node:test'
 import { plugin as fastifyHttpErrorsEnhanced, handleErrors } from '../src/index.ts'
 
 type Callback = () => void

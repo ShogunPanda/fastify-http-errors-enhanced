@@ -1,5 +1,5 @@
-import { type Ajv, type ValidateFunction } from 'ajv'
-import { type FastifyError } from 'fastify'
+import type { Ajv, ValidateFunction } from 'ajv'
+import type { FastifyError } from 'fastify'
 
 export const kHttpErrorsEnhancedConfiguration = Symbol('fastify-http-errors-enhanced-configuration')
 export const kHttpErrorsEnhancedResponseValidations = Symbol('fastify-http-errors-enhanced-response-validation')

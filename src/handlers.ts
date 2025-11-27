@@ -1,4 +1,7 @@
-import { type FastifyError, type FastifyReply, type FastifyRequest } from 'fastify'
+import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
+import type { HttpError } from 'http-errors-enhanced'
+import type { GenericObject, NodeError, RequestSection } from './interfaces.ts'
+import type { ValidationResult } from './validation.ts'
 import {
   BadRequestError,
   INTERNAL_SERVER_ERROR,
@@ -8,17 +11,11 @@ import {
   UnsupportedMediaTypeError,
   addAdditionalProperties,
   messagesByCodes,
-  serializeError,
-  type HttpError
+  serializeError
 } from 'http-errors-enhanced'
-import {
-  kHttpErrorsEnhancedConfiguration,
-  type GenericObject,
-  type NodeError,
-  type RequestSection
-} from './interfaces.ts'
+import { kHttpErrorsEnhancedConfiguration } from './interfaces.ts'
 import { upperFirst } from './utils.ts'
-import { convertValidationErrors, validationMessagesFormatters, type ValidationResult } from './validation.ts'
+import { convertValidationErrors, validationMessagesFormatters } from './validation.ts'
 
 export function handleNotFoundError(request: FastifyRequest, reply: FastifyReply): void {
   handleErrors(new NotFoundError('Not found.'), request, reply)

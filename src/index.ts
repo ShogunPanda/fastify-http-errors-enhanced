@@ -1,11 +1,8 @@
-import { type FastifyError, type FastifyInstance, type FastifyPluginOptions } from 'fastify'
+import type { FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify'
+import type { Configuration } from './interfaces.ts'
 import fastifyPlugin from 'fastify-plugin'
 import { handleErrors, handleNotFoundError } from './handlers.ts'
-import {
-  type Configuration,
-  kHttpErrorsEnhancedConfiguration,
-  kHttpErrorsEnhancedResponseValidations
-} from './interfaces.ts'
+import { kHttpErrorsEnhancedConfiguration, kHttpErrorsEnhancedResponseValidations } from './interfaces.ts'
 import { addResponseValidation, compileResponseValidationSchema } from './validation.ts'
 
 export * from './handlers.ts'

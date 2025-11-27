@@ -1,7 +1,8 @@
-import fastify, { type FastifyError, type FastifyInstance, type FastifyPluginOptions } from 'fastify'
-import { INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
+import type { FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify'
 import { deepStrictEqual, match } from 'node:assert'
 import { test } from 'node:test'
+import fastify from 'fastify'
+import { INTERNAL_SERVER_ERROR } from 'http-errors-enhanced'
 import { plugin as fastifyHttpErrorsEnhanced } from '../src/index.ts'
 
 async function buildServer(options: FastifyPluginOptions = {}): Promise<FastifyInstance> {
